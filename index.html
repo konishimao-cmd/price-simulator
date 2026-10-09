@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>料金シミュレータ</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --surface: #ffffff;
+    --surface-2: #f8f9fb;
+    --border: #e3e6eb;
+    --text: #1d2330;
+    --muted: #6b7280;
+    --primary: #1f5eff;
+    --primary-soft: #e8efff;
+    --off: #e5484d;
+    --off-soft: #fdecec;
+    --matsu: #b8860b;
+    --matsu-soft: #fbf4e2;
+    --take: #2e8b57;
+    --take-soft: #e6f4ec;
+    --ume: #c2457a;
+    --ume-soft: #fbe9f1;
+    --pat-a: #1f5eff;
+    --pat-a-soft: #e8efff;
+    --pat-b: #d9741a;
+    --pat-b-soft: #fdf0e3;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+  /* ===== ヘッダー / 設定バー ===== */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .bar {
+    max-width: 1440px; margin: 0 auto; padding: 12px 20px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px;
+  }
+  h1 { font-size: 20px; margin: 0 8px 0 0; letter-spacing: .04em; }
+  .group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .group-label { font-size: 12px; color: var(--muted); font-weight: 600; }
+
+  .seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; padding: 3px; }
+  .seg button {
+    border: 0; background: transparent; padding: 6px 14px; border-radius: 999px;
+    font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer;
+  }
+  .seg button.active { background: var(--primary); color: #fff; }
+
+  .toggle {
+    display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;
+    border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px 5px 6px; background: var(--surface);
+    font-size: 13px; font-weight: 600;
+  }
+  .toggle input { display: none; }
+  .toggle .sw { width: 34px; height: 20px; border-radius: 999px; background: #cfd4dc; position: relative; transition: background .15s; }
+  .toggle .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+  .toggle input:checked + .sw { background: var(--off); }
+  .toggle input:checked + .sw::after { transform: translateX(14px); }
+  .toggle .pct { color: var(--off); }
+  .toggle input:not(:checked) ~ .txt { color: var(--muted); text-decoration: line-through; }
+
+  .apr { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; }
+  .apr input { width: 64px; }
+  .spacer { flex: 1; }
+  .btn {
+    border: 1px solid var(--border); background: var(--surface); border-radius: 8px;
+    padding: 7px 14px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text);
+  }
+  .btn:hover { background: var(--surface-2); }
+
+  input[type=number], select {
+    font: inherit; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px;
+  }
+  input[type=number]:focus, select:focus { outline: 2px solid var(--primary); outline-offset: 0; border-color: transparent; }
+
+  /* ===== メイン ===== */
+  main { max-width: 1440px; margin: 0 auto; padding: 20px; }
+  .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: start; }
+  .cards.single { grid-template-columns: minmax(0, 560px); justify-content: center; }
+  .cards.single .card:not(:first-child) { display: none; }
+  .cards.single .card .tier-badge { display: none; }
+  .cards.double { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 1000px; margin: 0 auto; }
+  .cards.double .card:nth-child(3) { display: none; }
+
+  .card {
+    --accent: var(--primary); --accent-soft: var(--primary-soft);
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    overflow: hidden; display: flex; flex-direction: column;
+    box-shadow: 0 1px 2px rgba(16,24,40,.04);
+  }
+  .card[data-tier=matsu] { --accent: var(--matsu); --accent-soft: var(--matsu-soft); }
+  .card[data-tier=take]  { --accent: var(--take);  --accent-soft: var(--take-soft); }
+  .card[data-tier=ume]   { --accent: var(--ume);   --accent-soft: var(--ume-soft); }
+  .cards.single .card { --accent: var(--primary); --accent-soft: var(--primary-soft); }
+  .cards.double .card[data-tier=matsu] { --accent: var(--pat-a); --accent-soft: var(--pat-a-soft); }
+  .cards.double .card[data-tier=take]  { --accent: var(--pat-b); --accent-soft: var(--pat-b-soft); }
+
+  .card-head {
+    display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+    background: var(--accent-soft); border-bottom: 3px solid var(--accent);
+  }
+  .tier-badge {
+    width: 40px; height: 40px; border-radius: 10px; background: var(--accent); color: #fff;
+    display: grid; place-items: center; font-size: 22px; font-weight: 800; flex: none;
+  }
+  .card-title { font-weight: 700; font-size: 16px; }
+  .card-sub { font-size: 12px; color: var(--muted); }
+
+  .section { padding: 14px 16px; }
+  .section + .section { border-top: 1px dashed var(--border); }
+  .section-title { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px; letter-spacing: .05em; }
+
+  /* プラン枠 */
+  .slot { border: 1px solid var(--border); border-radius: 10px; padding: 10px; background: var(--surface-2); }
+  .slot + .slot { margin-top: 8px; }
+  .slot.filled { background: var(--surface); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+  .slot-top { display: flex; gap: 6px; align-items: center; }
+  .slot-no {
+    flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--border); color: var(--muted);
+    font-size: 12px; font-weight: 700; display: grid; place-items: center;
+  }
+  .slot.filled .slot-no { background: var(--accent); color: #fff; }
+  /* プラン名は折り返して全文表示（透明なselectを上に重ね、操作は各端末の標準ピッカー） */
+  .slot-top { align-items: flex-start; }
+  .slot-no, .clear { margin-top: 8px; }
+  .select-wrap { position: relative; flex: 1; min-width: 0; }
+  .select-face {
+    border: 1px solid var(--border); border-radius: 8px; background: var(--surface);
+    padding: 7px 28px 7px 10px; min-height: 38px; font-size: 14px; font-weight: 600; line-height: 1.45;
+    white-space: normal; overflow-wrap: anywhere; word-break: auto-phrase; position: relative;
+  }
+  .select-face::after { content: "▾"; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-weight: 400; }
+  .select-face.placeholder { color: var(--muted); font-weight: 400; }
+  .select-face .cat-tag {
+    display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 4px; vertical-align: 1px;
+    background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 700;
+  }
+  .select-wrap select {
+    position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;
+    font-size: 16px; /* iOSで選択時に画面が拡大されないよう16px */
+  }
+  .select-wrap:focus-within .select-face { outline: 2px solid var(--primary); border-color: transparent; }
+  .clear { border: 0; background: transparent; color: var(--muted); font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1; }
+  .clear:hover { color: var(--off); }
+  .counts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding-left: 28px; }
+  .counts:empty { display: none; }
+  .chip {
+    border: 1px solid var(--border); background: var(--surface); border-radius: 8px;
+    padding: 4px 10px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--text);
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .chip small { font-size: 10px; color: var(--off); font-weight: 700; }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip.active small { color: #fff; }
+  .slot-price { margin-top: 8px; padding-left: 28px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font-size: 13px; }
+  .slot-price:empty { display: none; }
+  .strike { color: var(--muted); text-decoration: line-through; }
+  .off-tag { background: var(--off-soft); color: var(--off); font-weight: 700; font-size: 11px; padding: 1px 6px; border-radius: 4px; }
+  .slot-price b { font-size: 15px; }
+  .sp-tag { background: var(--off); color: #fff; font-weight: 700; font-size: 11px; padding: 1px 6px; border-radius: 4px; }
+  .rows .sp-lbl { color: var(--off); font-weight: 700; }
+  .toggle.sp .pct::before { content: "★ "; }
+
+  /* 合計 */
+  .rows { display: grid; grid-template-columns: 1fr auto; row-gap: 4px; font-size: 14px; }
+  .rows .lbl { color: var(--muted); }
+  .rows .val { text-align: right; }
+  .rows .minus { color: var(--off); font-weight: 700; }
+  .total {
+    margin-top: 10px; padding: 12px; border-radius: 10px; background: var(--accent-soft);
+    display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  }
+  .total .lbl { font-weight: 700; font-size: 13px; }
+  .total .val { font-size: 28px; font-weight: 800; color: var(--accent); letter-spacing: .01em; }
+  .total .val small { font-size: 14px; margin-left: 2px; }
+
+  /* 分割 */
+  .inst-input { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .inst-input input { width: 72px; font-size: 16px; font-weight: 700; text-align: right; }
+  .inst-input .unit { font-weight: 700; margin-right: 6px; }
+  .inst-input .chip { padding: 3px 8px; font-size: 12px; }
+  .monthly {
+    margin-top: 10px; padding: 12px; border-radius: 10px; border: 2px solid var(--accent);
+    display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  }
+  .monthly .lbl { font-weight: 700; font-size: 13px; }
+  .monthly .val { font-size: 26px; font-weight: 800; }
+  .monthly .val small { font-size: 13px; margin-left: 2px; }
+  .inst-rows { margin-top: 8px; font-size: 13px; }
+  .empty-msg { color: var(--muted); font-size: 13px; text-align: center; padding: 8px 0; }
+
+  /* 折り畳み：回数割引（ヘッダー） */
+  .fold-btn {
+    display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+    border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; background: var(--surface);
+    font: inherit; font-size: 13px; font-weight: 700; color: var(--text);
+  }
+  .fold-btn:hover { background: var(--surface-2); }
+  .fold-status { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--off-soft); color: var(--off); }
+  .fold-status.none { background: var(--surface-2); color: var(--muted); }
+  .chev { color: var(--muted); transition: transform .15s; }
+  .fold-btn[aria-expanded=true] .chev { transform: rotate(180deg); }
+  .fold-panel { background: var(--surface-2); border-top: 1px solid var(--border); }
+  .fold-panel .bar { padding-top: 10px; padding-bottom: 10px; gap: 10px; }
+
+  /* 折り畳み：分割払い（カード内） */
+  .inst-head {
+    width: 100%; display: flex; align-items: center; gap: 8px; cursor: pointer;
+    border: 0; background: transparent; padding: 0; font: inherit; color: inherit; text-align: left;
+  }
+  .inst-head .section-title { margin: 0; flex: 1; }
+  .inst-head .sw { flex: none; width: 34px; height: 20px; border-radius: 999px; background: #cfd4dc; position: relative; transition: background .15s; }
+  .inst-head .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+  .inst-head[aria-expanded=true] .sw { background: var(--accent); }
+  .inst-head[aria-expanded=true] .sw::after { transform: translateX(14px); }
+  .inst-body { margin-top: 10px; }
+  .inst-section:not(.open) .inst-body,
+  .inst-section:not(.open) .apr-note { display: none; }
+
+  /* スタッフ用項目の表示切替（お客様に見せない） */
+  .staff-btn {
+    display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+    border: 1px dashed var(--border); border-radius: 8px; padding: 6px 10px; background: transparent;
+    font: inherit; font-size: 12px; font-weight: 600; color: var(--muted);
+  }
+  .staff-btn:hover { background: var(--surface-2); color: var(--text); }
+  .staff-icon { font-size: 15px; line-height: 1; }
+  body.customer .staff { display: none !important; }
+  body.customer .staff-btn { border-color: transparent; opacity: .45; }
+  body.customer .staff-btn .staff-label { display: none; }
+  body.customer .staff-btn:hover { opacity: 1; }
+  /* お客様表示中：分割の開閉スイッチは隠し、閉じている分割欄は丸ごと非表示 */
+  body.customer .inst-head { pointer-events: none; cursor: default; }
+  body.customer .inst-head .sw { display: none; }
+  body.customer .inst-section:not(.open) { display: none; }
+
+  .note { max-width: 1440px; margin: 0 auto; padding: 0 20px 28px; color: var(--muted); font-size: 12px; }
+  .note li { margin: 2px 0; }
+
+  @media (max-width: 1000px) {
+    .cards { grid-template-columns: repeat(3, minmax(300px, 1fr)); overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x mandatory; }
+    .card { scroll-snap-align: start; }
+    .cards.single { grid-template-columns: minmax(0, 1fr); overflow: visible; }
+    .cards.double { grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; }
+  }
+  @media (max-width: 600px) {
+    .cards.double { grid-template-columns: repeat(2, minmax(280px, 1fr)); overflow-x: auto; }
+    .bar, main, .note { padding-left: 16px; padding-right: 16px; }
+    header { position: static; }
+  }
+
+  @media print {
+    header .no-print, .clear, .inst-input .chip { display: none !important; }
+    header { position: static; border: 0; }
+    body { background: #fff; }
+    .cards { grid-template-columns: repeat(3, 1fr) !important; overflow: visible !important; gap: 10px; }
+    .cards.single { grid-template-columns: minmax(0, 560px) !important; }
+    .cards.double { grid-template-columns: repeat(2, 1fr) !important; }
+    .card { box-shadow: none; break-inside: avoid; }
+    .counts .chip:not(.active) { display: none; }
+    .select-face { border: 0; padding-right: 0; }
+    .select-face::after { display: none; }
+    .slot:not(.filled) { display: none; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <h1>料金シミュレータ</h1>
+
+    <div class="group no-print">
+      <span class="group-label">表示</span>
+      <div class="seg" id="modeSeg">
+        <button data-mode="single">1パターン</button>
+        <button data-mode="double">2パターン比較</button>
+        <button data-mode="tiers" class="active">松竹梅で比較</button>
+      </div>
+    </div>
+
+    <div class="group staff">
+      <button class="fold-btn" id="discFoldBtn" aria-expanded="false" aria-controls="discPanel">
+        <span>回数割引</span><span class="fold-status" id="discStatus"></span><span class="chev">▾</span>
+      </button>
+    </div>
+
+    <div class="group staff" id="aprGroup" hidden>
+      <span class="group-label">分割 年利</span>
+      <span class="apr"><input type="number" id="apr" value="14.8" step="0.1" min="0" class="num">%</span>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="group no-print staff">
+      <button class="btn" id="resetBtn">リセット</button>
+      <button class="btn" onclick="window.print()">印刷</button>
+    </div>
+    <button class="staff-btn no-print" id="staffBtn" aria-pressed="true" title="スタッフ用の項目を表示／非表示">
+      <span class="staff-icon">⚙</span><span class="staff-label">スタッフ設定を隠す</span>
+    </button>
+  </div>
+  <div class="fold-panel staff" id="discPanel" hidden>
+    <div class="bar">
+      <span class="group-label">適用する割引をON/OFF</span>
+      <label class="toggle"><input type="checkbox" data-disc="9" checked><span class="sw"></span><span class="txt">9回 <span class="pct">15%OFF</span></span></label>
+      <label class="toggle"><input type="checkbox" data-disc="12" checked><span class="sw"></span><span class="txt">12回 <span class="pct">20%OFF</span></span></label>
+      <label class="toggle"><input type="checkbox" data-disc="24" checked><span class="sw"></span><span class="txt">24回 <span class="pct">20%OFF</span></span></label>
+      <label class="toggle sp"><input type="checkbox" id="specialDisc"><span class="sw"></span><span class="txt"><span class="pct">特別割</span> 12回以上 さらに20%OFF</span></label>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="cards" id="cards"></div>
+</main>
+
+<ul class="note">
+  <li>金額は価格表（価格表 (1).xlsx）の「金額」を定価として、回数に応じた割引を適用しています（1円未満切り捨て）。</li>
+  <li class="staff">特別割は12回以上のプランが対象で、回数割引後の金額からさらに20%OFFします。</li>
+  <li>分割払いは元利均等方式・年利（実質年率）で計算した概算です。実際の月々のお支払額は信販会社の計算により異なる場合があります。</li>
+</ul>
+
+<script>
+/* ===== 価格表データ（価格表.xlsx B〜D列） ===== */
+const PRICE_TABLE = [
+  ["フェイス_6回", 6, 98000],
+  ["フェイス_9回", 9, 144000],
+  ["フェイス_12回", 12, 182400],
+  ["フェイス+全身(上半身+下半身)_6回", 6, 236880],
+  ["フェイス+全身(上半身+下半身)_9回", 9, 330480],
+  ["フェイス+全身(上半身+下半身)_12回", 12, 400896],
+  ["フェイス+陰部脱毛4ヶ所_6回", 6, 146880],
+  ["フェイス+陰部脱毛4ヶ所_9回", 9, 203796],
+  ["フェイス+陰部脱毛4ヶ所_12回", 12, 247296],
+  ["全身ALL(フェイス+全身+陰部4ヶ所)_6回", 6, 313200],
+  ["全身ALL(フェイス+全身+陰部4ヶ所)_9回", 9, 436356],
+  ["全身ALL(フェイス+全身+陰部4ヶ所)_12回", 12, 531456],
+  ["腕セット(二の腕・肘下・両脇・手の甲指)_6回", 6, 79800],
+  ["腕セット(二の腕・肘下・両脇・手の甲指)_12回", 12, 151200],
+  ["足セット(太もも・膝下・足の甲指)_6回", 6, 79800],
+  ["足セット(太もも・膝下・足の甲指)_12回", 12, 151200],
+  ["足セット(太もも・膝下・足の甲指)_9回", 9, 117000],
+  ["腕セット(二の腕・肘下・両脇・手の甲指)_9回", 9, 117000],
+  ["【エレポレ】全身ALL(フェイス+全身+陰部4ヶ所)_24回", 24, 1034419],
+  ["【エレポレ】全身ALL(フェイス+全身+陰部4ヶ所)_12回", 12, 642816],
+  ["【エレポレ】全身ALL(フェイス+全身+陰部4ヶ所)_9回", 9, 543456],
+  ["【エレポレ】フェイス+全身(上半身+下半身)_24回", 24, 797184],
+  ["【エレポレ】フェイス+全身(上半身+下半身)_12回", 12, 489216],
+  ["【エレポレ】フェイス+全身(上半身+下半身)_9回", 9, 413100],
+  ["【エレポレ】フェイス+陰部脱毛4ヶ所_24回", 24, 466867],
+  ["【エレポレ】フェイス+陰部脱毛4ヶ所_12回", 12, 293376],
+  ["【エレポレ】フェイス+陰部脱毛4ヶ所_9回", 9, 252756],
+  ["【エレポレ】全身(上半身+下半身)+陰部脱毛4ヶ所_24回", 24, 804787],
+  ["【エレポレ】全身(上半身+下半身)+陰部脱毛4ヶ所_12回", 12, 503040],
+  ["【エレポレ】全身(上半身+下半身)+陰部脱毛4ヶ所_9回", 9, 421056],
+  ["【エレポレ】フェイス_24回", 24, 358800],
+  ["【エレポレ】フェイス_12回", 12, 218400],
+  ["【エレポレ】フェイス_9回", 9, 180000],
+  ["【エレポレ】全身(上半身+下半身)_24回", 24, 886800],
+  ["【エレポレ】全身(上半身+下半身)_12回", 12, 546000],
+  ["【エレポレ】全身(上半身+下半身)_9回", 9, 427500],
+  ["【エレポレ】全身(上半身+下半身)_6回", 6, 231000],
+  ["【エレポレ】陰部脱毛4ヶ所_24回", 24, 370680],
+  ["【エレポレ】陰部脱毛4ヶ所_12回", 12, 240000],
+  ["【エレポレ】陰部脱毛4ヶ所_9回", 9, 191700],
+  ["フェイス_24回", 24, 310800],
+  ["フェイス+全身(上半身+下半身)_24回", 24, 658944],
+  ["フェイス+陰部脱毛4ヶ所_24回", 24, 405427],
+  ["全身ALL(フェイス+全身+陰部4ヶ所)_24回", 24, 865459],
+  ["全身(上半身+下半身)_24回", 24, 718800],
+  ["陰部脱毛4ヶ所_24回", 24, 322680],
+  ["全身(上半身+下半身)+陰部脱毛4ヶ所_24回", 24, 666547],
+];
+
+/* 回数別割引率（ON/OFFは画面上のトグルで切替） */
+const DISCOUNT_RATES = { 9: 0.15, 12: 0.20, 24: 0.20 };
+/* 特別割：12回以上のプランに、回数割引後の金額からさらに20%OFF */
+const SPECIAL_RATE = 0.20;
+const SPECIAL_MIN_COUNT = 12;
+
+/* ===== プランを「プラン名 × 回数」に整理 ===== */
+const PLANS = new Map(); // key: プラン名（回数なし） -> {key, label, category, options:[{count, price}]}
+for (const [fullName, count, price] of PRICE_TABLE) {
+  const key = fullName.replace(/_\d+回$/, "");
+  const category = key.startsWith("【エレポレ】") ? "エレポレ" : "通常";
+  const label = key.replace("【エレポレ】", "");
+  if (!PLANS.has(key)) PLANS.set(key, { key, label, category, options: [] });
+  PLANS.get(key).options.push({ count, price });
+}
+PLANS.forEach(p => p.options.sort((a, b) => a.count - b.count));
+const CATEGORIES = ["通常", "エレポレ"];
+
+/* ===== 状態 ===== */
+const TIERS = [
+  { id: "matsu", badge: "松", name: "松プラン" },
+  { id: "take",  badge: "竹", name: "竹プラン" },
+  { id: "ume",   badge: "梅", name: "梅プラン" },
+];
+const INSTALLMENT_PRESETS = [6, 12, 24, 36, 48, 60];
+
+function defaultState() {
+  return {
+    mode: "tiers",
+    instOpen: false,
+    discounts: { 9: true, 12: true, 24: true },
+    special: false,
+    apr: 14.8,
+    patterns: {
+      matsu: { slots: [{ plan: "【エレポレ】全身ALL(フェイス+全身+陰部4ヶ所)", count: 24 }, emptySlot(), emptySlot()], months: 60 },
+      take:  { slots: [{ plan: "全身ALL(フェイス+全身+陰部4ヶ所)", count: 12 }, emptySlot(), emptySlot()], months: 36 },
+      ume:   { slots: [{ plan: "フェイス", count: 9 }, emptySlot(), emptySlot()], months: 24 },
+    },
+  };
+}
+function emptySlot() { return { plan: "", count: null }; }
+let state = defaultState();
+
+/* ===== 計算 ===== */
+const yen = n => "¥" + Math.round(n).toLocaleString("ja-JP");
+
+function discountRate(count) {
+  return state.discounts[count] ? (DISCOUNT_RATES[count] || 0) : 0;
+}
+function priceOf(slot) {
+  const plan = PLANS.get(slot.plan);
+  if (!plan) return null;
+  const opt = plan.options.find(o => o.count === slot.count);
+  if (!opt) return null;
+  const rate = discountRate(opt.count);
+  const afterCount = Math.floor(opt.price * (1 - rate));
+  const special = state.special && opt.count >= SPECIAL_MIN_COUNT;
+  const discounted = special ? Math.floor(afterCount * (1 - SPECIAL_RATE)) : afterCount;
+  return { list: opt.price, rate, afterCount, special, discounted };
+}
+/* 元利均等返済：月額 = P × r / (1 − (1 + r)^−n)、r = 年利 / 12 */
+function installment(principal, months, aprPct) {
+  if (!principal || !months || months < 1) return null;
+  const r = aprPct / 100 / 12;
+  const monthly = r === 0 ? principal / months : principal * r / (1 - Math.pow(1 + r, -months));
+  const total = monthly * months;
+  return { monthly, total, fee: total - principal };
+}
+
+/* ===== 描画 ===== */
+const cardsEl = document.getElementById("cards");
+
+function planOptionsHtml() {
+  let html = `<option value="">― プランを選択 ―</option>`;
+  for (const cat of CATEGORIES) {
+    html += `<optgroup label="${cat === "エレポレ" ? "【エレポレ】" : "通常プラン"}">`;
+    PLANS.forEach(p => {
+      if (p.category === cat) html += `<option value="${p.key}">${cat === "エレポレ" ? "エレポレ｜" : ""}${p.label}</option>`;
+    });
+    html += `</optgroup>`;
+  }
+  return html;
+}
+
+function buildCards() {
+  const opts = planOptionsHtml();
+  cardsEl.innerHTML = TIERS.map(t => `
+    <section class="card" data-tier="${t.id}">
+      <div class="card-head">
+        <div class="tier-badge">${t.badge}</div>
+        <div>
+          <div class="card-title" data-role="title">${t.name}</div>
+          <div class="card-sub" data-role="sub"></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">プラン選択（最大3つ）</div>
+        ${[0, 1, 2].map(i => `
+          <div class="slot" data-slot="${i}">
+            <div class="slot-top">
+              <span class="slot-no">${i + 1}</span>
+              <div class="select-wrap">
+                <div class="select-face" data-role="face"></div>
+                <select data-role="plan" aria-label="プラン${i + 1}">${opts}</select>
+              </div>
+              <button class="clear" data-role="clear" title="クリア">×</button>
+            </div>
+            <div class="counts" data-role="counts"></div>
+            <div class="slot-price num" data-role="price"></div>
+          </div>`).join("")}
+      </div>
+
+      <div class="section">
+        <div class="section-title">一括払い</div>
+        <div class="rows num">
+          <span class="lbl">定価合計</span><span class="val" data-role="list"></span>
+          <span class="lbl">回数割引</span><span class="val minus" data-role="disc"></span>
+          <span class="lbl sp-lbl" data-role="spRow">特別割</span><span class="val minus" data-role="spRow"><span data-role="spDisc"></span></span>
+        </div>
+        <div class="total"><span class="lbl">お支払総額</span><span class="val num" data-role="total"></span></div>
+      </div>
+
+      <div class="section inst-section">
+        <button class="inst-head" data-role="instToggle" aria-expanded="false">
+          <span class="section-title">分割払い<span class="apr-note">（年利 <span data-role="aprLabel"></span>%）</span></span>
+          <span class="sw"></span>
+        </button>
+        <div class="inst-body">
+        <div class="inst-input">
+          <input type="number" min="1" max="120" step="1" class="num" data-role="months"><span class="unit">回</span>
+          ${INSTALLMENT_PRESETS.map(m => `<button class="chip" data-months="${m}">${m}</button>`).join("")}
+        </div>
+        <div data-role="inst"></div>
+        </div>
+      </div>
+    </section>`).join("");
+
+  // イベント
+  cardsEl.querySelectorAll(".card").forEach(card => {
+    const tier = card.dataset.tier;
+    const pat = state.patterns[tier];
+
+    card.querySelectorAll(".slot").forEach(slotEl => {
+      const i = +slotEl.dataset.slot;
+      slotEl.querySelector('[data-role=plan]').addEventListener("change", e => {
+        const plan = PLANS.get(e.target.value);
+        const prev = pat.slots[i].count;
+        // 同じ回数があれば維持、無ければ最大回数を初期選択
+        const count = plan ? (plan.options.some(o => o.count === prev) ? prev : plan.options[plan.options.length - 1].count) : null;
+        pat.slots[i] = { plan: e.target.value, count };
+        updateCard(tier);
+      });
+      slotEl.querySelector('[data-role=clear]').addEventListener("click", () => {
+        pat.slots[i] = emptySlot();
+        updateCard(tier);
+      });
+      slotEl.querySelector('[data-role=counts]').addEventListener("click", e => {
+        const btn = e.target.closest("[data-count]");
+        if (!btn) return;
+        pat.slots[i].count = +btn.dataset.count;
+        updateCard(tier);
+      });
+    });
+
+    card.querySelector('[data-role=instToggle]').addEventListener("click", () => {
+      setInstOpen(!state.instOpen);
+    });
+
+    const monthsInput = card.querySelector('[data-role=months]');
+    monthsInput.addEventListener("input", () => {
+      const v = parseInt(monthsInput.value, 10);
+      pat.months = Number.isFinite(v) && v > 0 ? v : null;
+      updateInstallment(tier);
+    });
+    card.querySelectorAll("[data-months]").forEach(b => b.addEventListener("click", () => {
+      pat.months = +b.dataset.months;
+      monthsInput.value = pat.months;
+      updateInstallment(tier);
+    }));
+  });
+}
+
+function patternTotals(tier) {
+  let list = 0, afterCount = 0, total = 0, n = 0;
+  for (const s of state.patterns[tier].slots) {
+    const p = priceOf(s);
+    if (!p) continue;
+    list += p.list; afterCount += p.afterCount; total += p.discounted; n++;
+  }
+  return { list, countDisc: list - afterCount, specialDisc: afterCount - total, total, n };
+}
+
+function updateCard(tier) {
+  const card = cardsEl.querySelector(`.card[data-tier=${tier}]`);
+  const pat = state.patterns[tier];
+
+  pat.slots.forEach((s, i) => {
+    const slotEl = card.querySelector(`.slot[data-slot="${i}"]`);
+    const plan = PLANS.get(s.plan);
+    slotEl.classList.toggle("filled", !!plan);
+    slotEl.querySelector('[data-role=plan]').value = s.plan;
+    const face = slotEl.querySelector('[data-role=face]');
+    face.classList.toggle("placeholder", !plan);
+    face.innerHTML = plan
+      ? (plan.category === "エレポレ" ? `<span class="cat-tag">エレポレ</span>` : "") + plan.label
+      : "プランを選択";
+    slotEl.querySelector('[data-role=clear]').style.visibility = plan ? "visible" : "hidden";
+
+    slotEl.querySelector('[data-role=counts]').innerHTML = plan
+      ? plan.options.map(o => {
+          const r = discountRate(o.count);
+          return `<button class="chip ${o.count === s.count ? "active" : ""}" data-count="${o.count}">${o.count}回${r ? `<small>${Math.round(r * 100)}%OFF</small>` : ""}</button>`;
+        }).join("")
+      : "";
+
+    const p = priceOf(s);
+    slotEl.querySelector('[data-role=price]').innerHTML = p
+      ? (p.rate || p.special
+          ? `<span class="strike">${yen(p.list)}</span>`
+            + (p.rate ? `<span class="off-tag">${Math.round(p.rate * 100)}%OFF</span>` : "")
+            + (p.special ? `<span class="sp-tag">特別割 ${Math.round(SPECIAL_RATE * 100)}%OFF</span>` : "")
+            + `<b>${yen(p.discounted)}</b>`
+          : `<b>${yen(p.list)}</b>`)
+      : "";
+  });
+
+  const t = patternTotals(tier);
+  card.querySelector('[data-role=sub]').textContent = t.n ? `${t.n}プラン選択中` : "プラン未選択";
+  card.querySelector('[data-role=list]').textContent = yen(t.list);
+  card.querySelector('[data-role=disc]').textContent = t.countDisc ? "−" + yen(t.countDisc) : "¥0";
+  card.querySelectorAll('[data-role=spRow]').forEach(el => el.hidden = !t.specialDisc);
+  card.querySelector('[data-role=spDisc]').textContent = "−" + yen(t.specialDisc);
+  card.querySelector('[data-role=total]').textContent = yen(t.total);
+
+  updateInstallment(tier);
+}
+
+function updateInstallment(tier) {
+  const card = cardsEl.querySelector(`.card[data-tier=${tier}]`);
+  const pat = state.patterns[tier];
+  const monthsInput = card.querySelector('[data-role=months]');
+  if (document.activeElement !== monthsInput) monthsInput.value = pat.months ?? "";
+  card.querySelectorAll("[data-months]").forEach(b => b.classList.toggle("active", +b.dataset.months === pat.months));
+  card.querySelector('[data-role=aprLabel]').textContent = state.apr;
+
+  const { total } = patternTotals(tier);
+  const inst = installment(total, pat.months, state.apr);
+  const el = card.querySelector('[data-role=inst]');
+  if (!total) { el.innerHTML = `<div class="empty-msg">プランを選択すると月々の金額を表示します</div>`; return; }
+  if (!inst) { el.innerHTML = `<div class="empty-msg">分割回数を入力してください</div>`; return; }
+  el.innerHTML = `
+    <div class="monthly"><span class="lbl">月々</span><span class="val num">${yen(inst.monthly)}<small>× ${pat.months}回</small></span></div>
+    <div class="rows inst-rows num">
+      <span class="lbl">分割手数料</span><span class="val">${yen(inst.fee)}</span>
+      <span class="lbl">分割支払総額</span><span class="val"><b>${yen(inst.total)}</b></span>
+    </div>`;
+}
+
+function updateAll() { TIERS.forEach(t => updateCard(t.id)); }
+
+/* 分割払い欄の開閉（松竹梅すべて同時に開閉） */
+function setInstOpen(open) {
+  state.instOpen = open;
+  document.getElementById("aprGroup").hidden = !open;
+  cardsEl.querySelectorAll(".inst-section").forEach(sec => {
+    sec.classList.toggle("open", open);
+    sec.querySelector('[data-role=instToggle]').setAttribute("aria-expanded", open);
+  });
+}
+
+/* ===== スタッフ用項目（回数割引・年利・分割スイッチ・リセット・印刷）の表示切替 ===== */
+const staffBtn = document.getElementById("staffBtn");
+staffBtn.addEventListener("click", () => {
+  const hide = !document.body.classList.contains("customer");
+  document.body.classList.toggle("customer", hide);
+  staffBtn.setAttribute("aria-pressed", !hide);
+  staffBtn.querySelector(".staff-label").textContent = hide ? "スタッフ設定を表示" : "スタッフ設定を隠す";
+});
+
+/* ===== ヘッダー操作 ===== */
+const discFoldBtn = document.getElementById("discFoldBtn");
+const discPanel = document.getElementById("discPanel");
+discFoldBtn.addEventListener("click", () => {
+  const open = discPanel.hidden;
+  discPanel.hidden = !open;
+  discFoldBtn.setAttribute("aria-expanded", open);
+});
+function updateDiscStatus() {
+  const on = Object.keys(DISCOUNT_RATES).filter(c => state.discounts[c]).map(c => c + "回");
+  if (state.special) on.push("特別割");
+  const el = document.getElementById("discStatus");
+  el.textContent = on.length ? on.join("・") + " 適用中" : "すべてOFF";
+  el.classList.toggle("none", !on.length);
+}
+document.querySelectorAll("[data-disc]").forEach(cb => cb.addEventListener("change", () => {
+  state.discounts[cb.dataset.disc] = cb.checked;
+  updateDiscStatus();
+  updateAll();
+}));
+document.getElementById("specialDisc").addEventListener("change", e => {
+  state.special = e.target.checked;
+  updateDiscStatus();
+  updateAll();
+});
+document.getElementById("apr").addEventListener("input", e => {
+  const v = parseFloat(e.target.value);
+  state.apr = Number.isFinite(v) && v >= 0 ? v : 0;
+  TIERS.forEach(t => updateInstallment(t.id));
+});
+document.getElementById("modeSeg").addEventListener("click", e => {
+  const b = e.target.closest("[data-mode]");
+  if (!b) return;
+  setMode(b.dataset.mode);
+});
+function setMode(mode) {
+  state.mode = mode;
+  document.querySelectorAll("#modeSeg button").forEach(x => x.classList.toggle("active", x.dataset.mode === mode));
+  cardsEl.classList.toggle("single", mode === "single");
+  cardsEl.classList.toggle("double", mode === "double");
+  // モードごとのカード名（1パターン：おすすめプラン／2パターン：A・B／松竹梅）
+  const labels = {
+    single: [["", "おすすめプラン"]],
+    double: [["A", "プランA"], ["B", "プランB"]],
+    tiers:  TIERS.map(t => [t.badge, t.name]),
+  }[mode];
+  TIERS.forEach((t, i) => {
+    const card = cardsEl.querySelector(`.card[data-tier=${t.id}]`);
+    const [badge, name] = labels[i] || [t.badge, t.name];
+    card.querySelector(".tier-badge").textContent = badge;
+    card.querySelector("[data-role=title]").textContent = name;
+  });
+}
+document.getElementById("resetBtn").addEventListener("click", () => {
+  state = defaultState();
+  document.querySelectorAll("[data-disc]").forEach(cb => cb.checked = true);
+  document.getElementById("specialDisc").checked = state.special;
+  document.getElementById("apr").value = state.apr;
+  buildCards(); setMode(state.mode); setInstOpen(state.instOpen); updateDiscStatus(); updateAll();
+});
+
+buildCards();
+setMode(state.mode);
+setInstOpen(state.instOpen);
+updateDiscStatus();
+updateAll();
+</script>
+</body>
+</html>
