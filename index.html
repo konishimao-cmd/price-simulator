@@ -183,6 +183,25 @@
   .rows .sp-lbl { color: var(--off); font-weight: 700; }
   .toggle.sp .pct::before { content: "★ "; }
 
+  /* 新規：3回特典（15万円以上のプラン選択時のみ） */
+  .bonus { margin-top: 10px; padding: 10px; border-radius: 10px; border: 1px dashed var(--border); background: var(--surface-2); }
+  .bonus.active { border: 1px solid #e0a800; background: #fff8e1; }
+  .bonus-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .bonus-title { font-size: 13px; font-weight: 800; }
+  .bonus .hint { font-size: 11px; color: var(--muted); }
+  .bonus-opts { display: flex; flex-direction: column; gap: 6px; }
+  .bonus-opt {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px; text-align: left;
+    border: 1px solid var(--border); background: var(--surface); border-radius: 8px; padding: 6px 10px;
+    font: inherit; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer;
+  }
+  .bonus-opt.active { border-color: #e0a800; background: #ffe9a8; font-weight: 800; }
+  .bonus-opt s { color: var(--muted); font-size: 11px; font-weight: 400; }
+  .bonus-opt:disabled { opacity: .45; cursor: not-allowed; }
+  .rows .bonus-lbl { color: #9a6b00; font-weight: 700; }
+  /* お客様表示中は、選んだ特典だけを表示（未選択・対象外なら枠ごと非表示） */
+  body.customer .bonus:not(.active), body.customer .bonus-opt:not(.active), body.customer .bonus .hint { display: none; }
+
   /* 合計 */
   .rows { display: grid; grid-template-columns: 1fr auto; row-gap: 4px; font-size: 14px; }
   .rows .lbl { color: var(--muted); }
@@ -311,6 +330,7 @@
     .select-face { border: 0; padding-right: 0; }
     .select-face::after { display: none; }
     .slot:not(.filled) { display: none; }
+    .bonus:not(.active), .bonus-opt:not(.active), .bonus .hint { display: none; }
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 </style>
@@ -378,7 +398,7 @@
 </main>
 
 <ul class="note">
-  <li>金額は価格表（価格表 (3).xlsx）の「金額」を定価として、回数に応じた割引を適用しています（1円未満切り捨て）。新規・追加タブには、A列「使用用途」に応じたプランを表示しています。</li>
+  <li>金額は価格表（価格表 (4).xlsx）の「金額」を定価として、回数に応じた割引を適用しています（1円未満切り捨て）。新規・追加タブには、A列「使用用途」に応じたプランを表示しています。</li>
   <li class="staff" data-for="new">特別割（新規のみ）は「12回以上」かつ「セットプラン（ALL、またはかっこの外に ＋ を含む）」が対象で、回数割引後の金額からさらに20%OFFします。</li>
   <li class="staff" data-for="add">追加プランの割引は、各カードの「割引」で 10%OFF／20%OFF を押すと、そのカードで選択中の回数に適用されます（回数ごとに記憶。もう一度押すと解除）。アフター保証は「保証 50%／80%／90%OFF」から選択、セレクト脱毛（追加CP）は割引不可です。24回が無いプランは「12回の定価 × 2」を24回の定価として表示しています。</li>
   <li class="staff" data-for="new">割引は上部の「回数割引」で全体に一括適用、各カードの「割引」でカードごとに個別適用できます（全体を切り替えると個別設定はリセットされます）。</li>
@@ -387,7 +407,7 @@
 </ul>
 
 <script>
-/* ===== 価格表データ（価格表 (3).xlsx A〜D列：使用用途・プラン名・回数・金額） ===== */
+/* ===== 価格表データ（価格表 (4).xlsx A〜D列：使用用途・プラン名・回数・金額） ===== */
 const PRICE_TABLE = [
   ["新規+追加", "フェイス_6回", 6, 98000],
   ["新規+追加", "フェイス_9回", 9, 144000],
@@ -436,6 +456,9 @@ const PRICE_TABLE = [
   ["新規+追加", "全身(上半身+下半身)_24回", 24, 718800],
   ["新規+追加", "陰部脱毛4ヶ所_24回", 24, 322680],
   ["新規+追加", "全身(上半身+下半身)+陰部脱毛4ヶ所_24回", 24, 666547],
+  ["新規CP", "ヒゲ脱毛3部位(鼻下、口下、あご)_3回", 3, 7800],
+  ["新規CP", "全⾝脱⽑(上半身+下半身)3回", 3, 9900],
+  // ※価格表 (4) の行52「ヒゲ脱毛3部位(鼻下、口下、あご)_3回 ¥3,300」は行50と同名のため保留中
   ["追加", "EPボディ(施術部位:上半身+下半身)_12回", 12, 213120],
   ["追加", "EPボディ(施術部位:上半身+下半身+陰部)_12回", 12, 311520],
   ["追加", "エレクトロポレーション脱毛12回(フェイス)", 12, 216700],
@@ -502,24 +525,33 @@ const DEFAULT_DOWN = 10000; // 頭金の初期値
 
 /* ===== タブ（新規／追加）ごとに、プランを「プラン名 × 回数」に整理 ===== */
 const TABS = {
-  new: { name: "新規", sub: "初回カウンセリング", categories: ["通常", "エレポレ"] },
+  new: { name: "新規", sub: "初回カウンセリング", categories: ["通常", "エレポレ", "新規CP"] },
   add: { name: "追加", sub: "施術時の追加提案",   categories: ["追加専用", "追加CP", "アフター保証", "通常"] },
 };
 const CATEGORY_LABELS = {
-  通常: "通常プラン", エレポレ: "【エレポレ】", 追加専用: "追加専用プラン", 追加CP: "追加CP", アフター保証: "アフター保証",
+  通常: "通常プラン", エレポレ: "【エレポレ】", 新規CP: "新規CP",
+  追加専用: "追加専用プラン", 追加CP: "追加CP", アフター保証: "アフター保証",
 };
 /* A列「使用用途」→ 表示グループ（新規・新規+追加の通常プランは名前で通常／エレポレに分ける） */
-const USAGE_CATEGORY = { 追加: "追加専用", 追加CP: "追加CP", 追加AF: "アフター保証" };
+const USAGE_CATEGORY = { 新規CP: "新規CP", 追加: "追加専用", 追加CP: "追加CP", 追加AF: "アフター保証" };
 const isElepore = key => key.startsWith("【エレポレ】");
 
 /* プラン名から回数部分を除いてまとめる（例：「眉+小鼻_6回」「エレクトロポレーション脱毛6回(フェイス)」→ 回数なしの名前）
    ※「全⾝」のような互換文字はNFKCで通常の「全身」に揃える */
 const planKeyOf = (name, count) => name.normalize("NFKC").replace(new RegExp(`_?${count}回`), "");
 
+/* 新規「3回特典」：A列「新規CP」のプラン。15万円以上のプランを選んだカードにだけ、どちらか1つを無料（¥0）で付けられる
+   ※新規CPは通常のプラン選択からも選べる（その場合は価格表の金額がかかる） */
+const BONUS_MIN_PRICE = 150000;
+const BONUS_PLANS = PRICE_TABLE.filter(([usage]) => usage === "新規CP").map(([, fullName, count, price]) => {
+  const key = planKeyOf(fullName, count);
+  return { key, label: `${key} ${count}回`, price };
+});
+
 const PLANS_BY_TAB = { new: new Map(), add: new Map() }; // key: プラン名（回数なし） -> {key, label, category, options:[{count, price}]}
 for (const [usage, fullName, count, price] of PRICE_TABLE) {
   const key = planKeyOf(fullName, count);
-  const tabs = usage.split("+").map(u => u === "新規" ? "new" : "add"); // 「追加」「追加CP」「追加AF」は追加タブ
+  const tabs = usage.split("+").map(u => u.startsWith("新規") ? "new" : "add"); // 「新規」「新規CP」は新規タブ、「追加」「追加CP」「追加AF」は追加タブ
   for (const tab of tabs) {
     const plans = PLANS_BY_TAB[tab];
     if (!plans.has(key)) {
@@ -573,10 +605,10 @@ function defaultState() {
 }
 function slot(plan, count) { return { plan, count }; }
 function emptySlot() { return slot("", null); }
-/* 新規タブ：discOn / spOn（null＝全体設定に従う、true/false＝このカードだけ個別にON/OFF）
+/* 新規タブ：discOn / spOn（null＝全体設定に従う、true/false＝このカードだけ個別にON/OFF）、bonus（3回特典のプラン名。""＝なし）
    追加タブ：addRates（このカードの割引グループごと・回数ごとの割引率 {normal: {回数: 率}, af: {回数: 率}}） */
 function newPattern(slots) {
-  return { slots, months: DEFAULT_MONTHS, down: DEFAULT_DOWN, discOn: null, spOn: null, addRates: { normal: {}, af: {} } };
+  return { slots, months: DEFAULT_MONTHS, down: DEFAULT_DOWN, discOn: null, spOn: null, bonus: "", addRates: { normal: {}, af: {} } };
 }
 let state = defaultState();
 
@@ -683,6 +715,7 @@ function buildCards() {
         <div class="section-head">
           <div class="section-title">プラン選択（最大3つ）</div>
           <div class="card-disc staff" data-role="cdisc">
+            <button class="cdisc-fold" data-role="bonusFold" data-for="new" aria-expanded="false" title="3回特典の表示">特典<span class="chev">▾</span></button>
             <div class="cdisc-btns" data-role="cdiscBtns" hidden>
               <button class="dtog" data-dt="count" data-for="new">回数割引</button>
               <button class="dtog" data-dt="sp" data-for="new">特別割</button>
@@ -705,6 +738,14 @@ function buildCards() {
             <div class="counts" data-role="counts"></div>
             <div class="slot-price num" data-role="price"></div>
           </div>`).join("")}
+        ${state.tab === "new" ? `
+        <div class="bonus" data-role="bonus" hidden>
+          <div class="bonus-head"><span class="bonus-title">🎁 3回特典</span><span class="hint" data-role="bonusHint"></span></div>
+          <div class="bonus-opts">
+            <button class="bonus-opt" data-bonus="">付けない</button>
+            ${BONUS_PLANS.map(b => `<button class="bonus-opt" data-bonus="${b.key}"><span>${b.label}</span><span class="num"><s>${yen(b.price)}</s> <b>¥0</b></span></button>`).join("")}
+          </div>
+        </div>` : ""}
       </div>
 
       <div class="section">
@@ -713,6 +754,7 @@ function buildCards() {
           <span class="lbl">定価合計</span><span class="val" data-role="list"></span>
           <span class="lbl">${state.tab === "add" ? "割引" : "回数割引"}</span><span class="val minus" data-role="disc"></span>
           <span class="lbl sp-lbl" data-role="spRow">特別割</span><span class="val minus" data-role="spRow"><span data-role="spDisc"></span></span>
+          <span class="lbl bonus-lbl" data-role="bonusRow"><span data-role="bonusLbl"></span></span><span class="val bonus-lbl" data-role="bonusRow">¥0</span>
         </div>
         <div class="total"><span class="lbl">お支払総額</span><span class="val num" data-role="total"></span></div>
       </div>
@@ -785,6 +827,21 @@ function buildCards() {
       updateCard(tier);
     });
 
+    // 3回特典（新規のみ）：「特典」ボタンで欄を出し入れ
+    const bonusFold = card.querySelector('[data-role=bonusFold]');
+    bonusFold.addEventListener("click", () => {
+      const box = card.querySelector('[data-role=bonus]');
+      if (!box) return;
+      box.hidden = !box.hidden;
+      bonusFold.setAttribute("aria-expanded", !box.hidden);
+    });
+    card.querySelector('[data-role=bonus]')?.addEventListener("click", e => {
+      const b = e.target.closest("[data-bonus]");
+      if (!b || b.disabled) return;
+      pat.bonus = b.dataset.bonus;
+      updateCard(tier);
+    });
+
     // 頭金
     const downInput = card.querySelector('[data-role=down]');
     downInput.addEventListener("input", () => {
@@ -813,6 +870,10 @@ function buildCards() {
   });
 }
 
+/* 3回特典：割引後 15万円以上のプランが1つでもあるカードだけ選択可（新規のみ） */
+const bonusEligible = pat => state.tab === "new" && pat.slots.some(s => (priceOf(pat, s)?.discounted ?? 0) >= BONUS_MIN_PRICE);
+const bonusOf = pat => bonusEligible(pat) ? BONUS_PLANS.find(b => b.key === pat.bonus) ?? null : null;
+
 function patternTotals(tier) {
   const pat = state.patterns[tier];
   let list = 0, afterCount = 0, total = 0, n = 0;
@@ -821,7 +882,7 @@ function patternTotals(tier) {
     if (!p) continue;
     list += p.list; afterCount += p.afterCount; total += p.discounted; n++;
   }
-  return { list, countDisc: list - afterCount, specialDisc: afterCount - total, total, n };
+  return { list, countDisc: list - afterCount, specialDisc: afterCount - total, bonus: bonusOf(pat), total, n }; // 特典は¥0のため合計に影響しない
 }
 
 function updateCard(tier) {
@@ -873,6 +934,23 @@ function updateCard(tier) {
   card.querySelector('[data-role=disc]').textContent = t.countDisc ? "−" + yen(t.countDisc) : "¥0";
   card.querySelectorAll('[data-role=spRow]').forEach(el => el.hidden = !t.specialDisc);
   card.querySelector('[data-role=spDisc]').textContent = "−" + yen(t.specialDisc);
+  card.querySelectorAll('[data-role=bonusRow]').forEach(el => el.hidden = !t.bonus);
+  card.querySelector('[data-role=bonusLbl]').textContent = t.bonus ? `3回特典（${t.bonus.label}）` : "";
+
+  // 3回特典の選択欄（対象外のときは選べない。選択していた特典は対象外になると外れる）
+  const bonusEl = card.querySelector('[data-role=bonus]');
+  if (bonusEl) {
+    const eligible = bonusEligible(pat);
+    if (!eligible) pat.bonus = "";
+    bonusEl.classList.toggle("active", !!t.bonus);
+    bonusEl.querySelector('[data-role=bonusHint]').textContent = eligible
+      ? "どちらか1つを付けられます"
+      : `${BONUS_MIN_PRICE / 10000}万円以上のプラン選択時に付けられます`;
+    bonusEl.querySelectorAll("[data-bonus]").forEach(b => {
+      b.disabled = !eligible && b.dataset.bonus !== "";
+      b.classList.toggle("active", b.dataset.bonus === pat.bonus);
+    });
+  }
   card.querySelector('[data-role=total]').textContent = yen(t.total);
 
   updateInstallment(tier);
