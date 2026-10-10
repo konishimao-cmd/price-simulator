@@ -378,16 +378,16 @@
 </main>
 
 <ul class="note">
-  <li>金額は価格表（価格表 (2).xlsx）の「金額」を定価として、回数に応じた割引を適用しています（1円未満切り捨て）。新規・追加タブには、A列「使用用途」に応じたプランを表示しています。</li>
+  <li>金額は価格表（価格表 (3).xlsx）の「金額」を定価として、回数に応じた割引を適用しています（1円未満切り捨て）。新規・追加タブには、A列「使用用途」に応じたプランを表示しています。</li>
   <li class="staff" data-for="new">特別割（新規のみ）は「12回以上」かつ「セットプラン（ALL、またはかっこの外に ＋ を含む）」が対象で、回数割引後の金額からさらに20%OFFします。</li>
-  <li class="staff" data-for="add">追加プランの割引は、各カードの「割引」で 10%OFF／20%OFF を押すと、そのカードで選択中の回数に適用されます（回数ごとに記憶。もう一度押すと解除）。24回が無いプランは「12回の定価 × 2」を24回の定価として表示しています。</li>
+  <li class="staff" data-for="add">追加プランの割引は、各カードの「割引」で 10%OFF／20%OFF を押すと、そのカードで選択中の回数に適用されます（回数ごとに記憶。もう一度押すと解除）。セレクト脱毛（追加CP）・アフター保証は割引不可です。24回が無いプランは「12回の定価 × 2」を24回の定価として表示しています。</li>
   <li class="staff" data-for="new">割引は上部の「回数割引」で全体に一括適用、各カードの「割引」でカードごとに個別適用できます（全体を切り替えると個別設定はリセットされます）。</li>
   <li>分割払いは概算です（最大50回）。頭金は分割手数料の対象外です。実際のお支払額は信販会社の計算により異なる場合があります。</li>
   <li class="staff">計算方式：アドオン方式＝分割手数料は「分割元金 × 月あたり料率 × 回数」。年利方式＝元利均等返済・実質年率で計算。</li>
 </ul>
 
 <script>
-/* ===== 価格表データ（価格表 (2).xlsx A〜D列：使用用途・プラン名・回数・金額） ===== */
+/* ===== 価格表データ（価格表 (3).xlsx A〜D列：使用用途・プラン名・回数・金額） ===== */
 const PRICE_TABLE = [
   ["新規+追加", "フェイス_6回", 6, 98000],
   ["新規+追加", "フェイス_9回", 9, 144000],
@@ -457,6 +457,27 @@ const PRICE_TABLE = [
   ["追加", "どこでも脱毛(制限時間の中でいずれかの部位)_40分_6回", 6, 179700],
   ["追加", "どこでも脱毛(制限時間の中でいずれかの部位)_40分_9回", 9, 256500],
   ["追加", "どこでも脱毛(制限時間の中でいずれかの部位)_40分_12回", 12, 329000],
+  ["追加CP", "【エレポレ】セレクト脱20分_6回", 6, 103008],
+  ["追加CP", "【エレポレ】セレクト脱20分_9回", 9, 147456],
+  ["追加CP", "【エレポレ】セレクト脱20分_12回", 12, 185920],
+  ["追加CP", "【エレポレ】セレクト脱40分_6回", 6, 151008],
+  ["追加CP", "【エレポレ】セレクト脱40分_9回", 9, 218160],
+  ["追加CP", "【エレポレ】セレクト脱40分_12回", 12, 282560],
+  ["追加AF", "アフター保証_ヒゲ脱毛4回", 4, 179100],
+  ["追加AF", "アフター保証_ヒゲ脱毛8回", 8, 318200],
+  ["追加AF", "アフター保証_ヒゲ脱毛12回", 12, 407300],
+  ["追加AF", "アフター保証_上半身脱毛4回", 4, 329600],
+  ["追加AF", "アフター保証_上半身脱毛8回", 8, 632000],
+  ["追加AF", "アフター保証_上半身脱毛12回", 12, 900000],
+  ["追加AF", "アフター保証_下半身脱毛4回", 4, 329600],
+  ["追加AF", "アフター保証_下半身脱毛8回", 8, 632000],
+  ["追加AF", "アフター保証_下半身脱毛12回", 12, 900000],
+  ["追加AF", "アフター保証_陰部全体4回(Vライン、Iライン、Oライン、おしり)", 4, 285120],
+  ["追加AF", "アフター保証_陰部全体8回(Vライン、Iライン、Oライン、おしり)", 8, 546240],
+  ["追加AF", "アフター保証_陰部全体12回(Vライン、Iライン、Oライン、おしり)", 12, 783360],
+  ["追加AF", "アフター保証_まゆ・小鼻脱毛4回", 4, 125370],
+  ["追加AF", "アフター保証_まゆ・小鼻脱毛8回", 8, 216376],
+  ["追加AF", "アフター保証_まゆ・小鼻脱毛12回", 12, 264745],
 ];
 
 /* 新規：回数別割引率（ON/OFFは画面上のトグルで切替） */
@@ -478,9 +499,16 @@ const DEFAULT_DOWN = 10000; // 頭金の初期値
 /* ===== タブ（新規／追加）ごとに、プランを「プラン名 × 回数」に整理 ===== */
 const TABS = {
   new: { name: "新規", sub: "初回カウンセリング", categories: ["通常", "エレポレ"] },
-  add: { name: "追加", sub: "施術時の追加提案",   categories: ["追加専用", "通常"] },
+  add: { name: "追加", sub: "施術時の追加提案",   categories: ["追加専用", "追加CP", "アフター保証", "通常"] },
 };
-const CATEGORY_LABELS = { 通常: "通常プラン", エレポレ: "【エレポレ】", 追加専用: "追加専用プラン" };
+const CATEGORY_LABELS = {
+  通常: "通常プラン", エレポレ: "【エレポレ】", 追加専用: "追加専用プラン", 追加CP: "追加CP", アフター保証: "アフター保証",
+};
+/* A列「使用用途」→ 表示グループ（新規・新規+追加の通常プランは名前で通常／エレポレに分ける） */
+const USAGE_CATEGORY = { 追加: "追加専用", 追加CP: "追加CP", 追加AF: "アフター保証" };
+const isElepore = key => key.startsWith("【エレポレ】");
+/* 追加タブで 10%／20% 割引ができないグループ（セレクト脱毛・アフター保証） */
+const NO_ADD_DISCOUNT_CATEGORIES = ["追加CP", "アフター保証"];
 
 /* プラン名から回数部分を除いてまとめる（例：「眉+小鼻_6回」「エレクトロポレーション脱毛6回(フェイス)」→ 回数なしの名前）
    ※「全⾝」のような互換文字はNFKCで通常の「全身」に揃える */
@@ -489,11 +517,11 @@ const planKeyOf = (name, count) => name.normalize("NFKC").replace(new RegExp(`_?
 const PLANS_BY_TAB = { new: new Map(), add: new Map() }; // key: プラン名（回数なし） -> {key, label, category, options:[{count, price}]}
 for (const [usage, fullName, count, price] of PRICE_TABLE) {
   const key = planKeyOf(fullName, count);
-  const tabs = usage.split("+").map(u => u === "新規" ? "new" : "add");
+  const tabs = usage.split("+").map(u => u === "新規" ? "new" : "add"); // 「追加」「追加CP」「追加AF」は追加タブ
   for (const tab of tabs) {
     const plans = PLANS_BY_TAB[tab];
     if (!plans.has(key)) {
-      const category = usage === "追加" ? "追加専用" : key.startsWith("【エレポレ】") ? "エレポレ" : "通常";
+      const category = USAGE_CATEGORY[usage] ?? (isElepore(key) ? "エレポレ" : "通常");
       const label = key.replace("【エレポレ】", "").replace(/_/g, " ");
       plans.set(key, { key, label, category, options: [] });
     }
@@ -556,9 +584,10 @@ const yen = n => "¥" + Math.round(n).toLocaleString("ja-JP");
 /* 割引の適用（カードの個別設定があれば優先、なければ全体設定） */
 const countDiscOn = (pat, s) => pat.discOn ?? !!state.discounts[s.count];
 const patSpecialOn = pat => pat.spOn ?? state.special;
-/* 追加の割引率：カードごと・回数ごとに設定 */
+/* 追加の割引率：カードごと・回数ごとに設定（セレクト脱毛・アフター保証は割引不可） */
 const addRateOf = (pat, count) => pat.addRates[count] || 0;
-const selectedCounts = pat => [...new Set(pat.slots.filter(s => PLANS.has(s.plan)).map(s => s.count))];
+const addDiscountable = planKey => PLANS.has(planKey) && !NO_ADD_DISCOUNT_CATEGORIES.includes(PLANS.get(planKey).category);
+const selectedCounts = pat => [...new Set(pat.slots.filter(s => addDiscountable(s.plan)).map(s => s.count))];
 /* カードの「10%OFF／20%OFF」ボタンの表示状態：選択中の回数の割引率がそろっていればその率 */
 function patAddRateShown(pat) {
   const rates = [...new Set(selectedCounts(pat).map(c => addRateOf(pat, c)))];
@@ -566,7 +595,7 @@ function patAddRateShown(pat) {
 }
 /* プランの割引率：新規＝回数別の固定率、追加＝回数ごとに 10%／20% を選択 */
 const slotRate = (pat, s) => state.tab === "add"
-  ? addRateOf(pat, s.count)
+  ? (addDiscountable(s.plan) ? addRateOf(pat, s.count) : 0)
   : countDiscOn(pat, s) ? (DISCOUNT_RATES[s.count] || 0) : 0;
 
 function priceOf(pat, s) {
@@ -623,7 +652,7 @@ function planOptionsHtml() {
   for (const cat of TABS[state.tab].categories) {
     html += `<optgroup label="${CATEGORY_LABELS[cat]}">`;
     PLANS.forEach(p => {
-      if (p.category === cat) html += `<option value="${p.key}">${cat === "エレポレ" ? "エレポレ｜" : ""}${p.label}</option>`;
+      if (p.category === cat) html += `<option value="${p.key}">${isElepore(p.key) ? "エレポレ｜" : ""}${p.label}</option>`;
     });
     html += `</optgroup>`;
   }
@@ -798,13 +827,13 @@ function updateCard(tier) {
     const face = slotEl.querySelector('[data-role=face]');
     face.classList.toggle("placeholder", !plan);
     face.innerHTML = plan
-      ? (plan.category === "エレポレ" ? `<span class="cat-tag">エレポレ</span>` : "") + plan.label
+      ? (isElepore(plan.key) ? `<span class="cat-tag">エレポレ</span>` : "") + plan.label
       : "プランを選択";
     slotEl.querySelector('[data-role=clear]').style.visibility = plan ? "visible" : "hidden";
 
     slotEl.querySelector('[data-role=counts]').innerHTML = plan
       ? plan.options.map(o => {
-          const r = slotRate(pat, o);
+          const r = slotRate(pat, { plan: s.plan, count: o.count });
           return `<button class="chip ${o.count === s.count ? "active" : ""}" data-count="${o.count}">${o.count}回${r ? `<small>${Math.round(r * 100)}%OFF</small>` : ""}</button>`;
         }).join("")
       : "";
