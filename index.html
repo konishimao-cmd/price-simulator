@@ -166,6 +166,9 @@
   .clear:hover { color: var(--off); }
   .counts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding-left: 28px; }
   .counts:empty { display: none; }
+  /* 回数は選択中のものだけ表示。押すと他の回数が開く */
+  .counts:not(.open) .chip:not(.active) { display: none; }
+  .counts:not(.open) .chip.active.more::after { content: "▾"; font-size: 11px; margin-left: 2px; opacity: .85; }
   .chip {
     border: 1px solid var(--border); background: var(--surface); border-radius: 8px;
     padding: 4px 10px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--text);
@@ -799,9 +802,16 @@ function buildCards() {
         pat.slots[i] = emptySlot();
         updateCard(tier);
       });
-      slotEl.querySelector('[data-role=counts]').addEventListener("click", e => {
+      const countsEl = slotEl.querySelector('[data-role=counts]');
+      countsEl.addEventListener("click", e => {
         const btn = e.target.closest("[data-count]");
         if (!btn) return;
+        // 閉じているときに選択中の回数を押したら一覧を開く。開いているときは選んで閉じる
+        if (!countsEl.classList.contains("open") && btn.classList.contains("active")) {
+          countsEl.classList.add("open");
+          return;
+        }
+        countsEl.classList.remove("open");
         pat.slots[i].count = +btn.dataset.count;
         updateCard(tier);
       });
@@ -904,7 +914,7 @@ function updateCard(tier) {
     slotEl.querySelector('[data-role=counts]').innerHTML = plan
       ? plan.options.map(o => {
           const r = slotRate(pat, { plan: s.plan, count: o.count });
-          return `<button class="chip ${o.count === s.count ? "active" : ""}" data-count="${o.count}">${o.count}回${r ? `<small>${Math.round(r * 100)}%OFF</small>` : ""}</button>`;
+          return `<button class="chip ${o.count === s.count ? "active" : ""} ${plan.options.length > 1 ? "more" : ""}" data-count="${o.count}">${o.count}回${r ? `<small>${Math.round(r * 100)}%OFF</small>` : ""}</button>`;
         }).join("")
       : "";
 
