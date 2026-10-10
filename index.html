@@ -92,6 +92,11 @@
 
   /* ===== メイン ===== */
   main { max-width: 1440px; margin: 0 auto; padding: 20px; }
+
+  /* 新規／追加の切替（スタッフ用・ヘッダー内） */
+  #tabs button[data-tab=add].active { background: #0f9d8a; }
+  /* 割引パネル：表示中のタブに関係する設定だけ出す */
+  body[data-tab=new] [data-for=add], body[data-tab=add] [data-for=new] { display: none !important; }
   .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: start; }
   .cards.single { grid-template-columns: minmax(0, 560px); justify-content: center; }
   .cards.single .card:not(:first-child) { display: none; }
@@ -316,6 +321,14 @@
   <div class="bar">
     <h1>料金シミュレータ</h1>
 
+    <div class="group staff no-print">
+      <span class="group-label">用途</span>
+      <div class="seg" id="tabs" role="tablist">
+        <button role="tab" data-tab="new" title="初回カウンセリング">新規</button>
+        <button role="tab" data-tab="add" title="施術時の追加提案">追加</button>
+      </div>
+    </div>
+
     <div class="group no-print">
       <span class="group-label">表示</span>
       <div class="seg" id="modeSeg">
@@ -325,7 +338,7 @@
       </div>
     </div>
 
-    <div class="group staff">
+    <div class="group staff" data-for="new">
       <button class="fold-btn" id="discFoldBtn" aria-expanded="false" aria-controls="discPanel">
         <span>回数割引</span><span class="fold-status" id="discStatus"></span><span class="chev">▾</span>
       </button>
@@ -349,13 +362,13 @@
       <span class="staff-icon">⚙</span><span class="staff-label">スタッフ設定を隠す</span>
     </button>
   </div>
-  <div class="fold-panel staff" id="discPanel" hidden>
+  <div class="fold-panel staff" id="discPanel" data-for="new" hidden>
     <div class="bar">
-      <span class="group-label">全体に適用（各プランの下で個別にも切替可）</span>
-      <label class="toggle"><input type="checkbox" data-disc="9"><span class="sw"></span><span class="txt">9回 <span class="pct">15%OFF</span></span></label>
-      <label class="toggle"><input type="checkbox" data-disc="12"><span class="sw"></span><span class="txt">12回 <span class="pct">20%OFF</span></span></label>
-      <label class="toggle"><input type="checkbox" data-disc="24"><span class="sw"></span><span class="txt">24回 <span class="pct">20%OFF</span></span></label>
-      <label class="toggle sp"><input type="checkbox" id="specialDisc"><span class="sw"></span><span class="txt"><span class="pct">特別割</span> 12回以上・ALL／＋プラン さらに20%OFF</span></label>
+      <span class="group-label">全体に適用（各カードの「割引」で個別にも切替可）</span>
+      <label class="toggle" data-for="new"><input type="checkbox" data-disc="9"><span class="sw"></span><span class="txt">9回 <span class="pct">15%OFF</span></span></label>
+      <label class="toggle" data-for="new"><input type="checkbox" data-disc="12"><span class="sw"></span><span class="txt">12回 <span class="pct">20%OFF</span></span></label>
+      <label class="toggle" data-for="new"><input type="checkbox" data-disc="24"><span class="sw"></span><span class="txt">24回 <span class="pct">20%OFF</span></span></label>
+      <label class="toggle sp" data-for="new"><input type="checkbox" id="specialDisc"><span class="sw"></span><span class="txt"><span class="pct">特別割</span> 12回以上・ALL／＋プラン さらに20%OFF</span></label>
     </div>
   </div>
 </header>
@@ -365,68 +378,92 @@
 </main>
 
 <ul class="note">
-  <li>金額は価格表（価格表 (1).xlsx）の「金額」を定価として、回数に応じた割引を適用しています（1円未満切り捨て）。</li>
-  <li class="staff">特別割は「12回以上」かつ「プラン名に ALL または ＋ を含む」プランが対象で、回数割引後の金額からさらに20%OFFします。</li>
-  <li class="staff">割引は上部の「回数割引」で全体に一括適用、各カードの「プラン選択」右のボタンでカードごとに個別適用できます（全体を切り替えると個別設定はリセットされます）。</li>
+  <li>金額は価格表（価格表 (2).xlsx）の「金額」を定価として、回数に応じた割引を適用しています（1円未満切り捨て）。新規・追加タブには、A列「使用用途」に応じたプランを表示しています。</li>
+  <li class="staff" data-for="new">特別割（新規のみ）は「12回以上」かつ「セットプラン（ALL、またはかっこの外に ＋ を含む）」が対象で、回数割引後の金額からさらに20%OFFします。</li>
+  <li class="staff" data-for="add">追加プランの割引は、各カードの「割引」で 10%OFF／20%OFF を押すと、そのカードで選択中の回数に適用されます（回数ごとに記憶。もう一度押すと解除）。24回が無いプランは「12回の定価 × 2」を24回の定価として表示しています。</li>
+  <li class="staff" data-for="new">割引は上部の「回数割引」で全体に一括適用、各カードの「割引」でカードごとに個別適用できます（全体を切り替えると個別設定はリセットされます）。</li>
   <li>分割払いは概算です（最大50回）。頭金は分割手数料の対象外です。実際のお支払額は信販会社の計算により異なる場合があります。</li>
   <li class="staff">計算方式：アドオン方式＝分割手数料は「分割元金 × 月あたり料率 × 回数」。年利方式＝元利均等返済・実質年率で計算。</li>
 </ul>
 
 <script>
-/* ===== 価格表データ（価格表.xlsx B〜D列） ===== */
+/* ===== 価格表データ（価格表 (2).xlsx A〜D列：使用用途・プラン名・回数・金額） ===== */
 const PRICE_TABLE = [
-  ["フェイス_6回", 6, 98000],
-  ["フェイス_9回", 9, 144000],
-  ["フェイス_12回", 12, 182400],
-  ["フェイス+全身(上半身+下半身)_6回", 6, 236880],
-  ["フェイス+全身(上半身+下半身)_9回", 9, 330480],
-  ["フェイス+全身(上半身+下半身)_12回", 12, 400896],
-  ["フェイス+陰部脱毛4ヶ所_6回", 6, 146880],
-  ["フェイス+陰部脱毛4ヶ所_9回", 9, 203796],
-  ["フェイス+陰部脱毛4ヶ所_12回", 12, 247296],
-  ["全身ALL(フェイス+全身+陰部4ヶ所)_6回", 6, 313200],
-  ["全身ALL(フェイス+全身+陰部4ヶ所)_9回", 9, 436356],
-  ["全身ALL(フェイス+全身+陰部4ヶ所)_12回", 12, 531456],
-  ["腕セット(二の腕・肘下・両脇・手の甲指)_6回", 6, 79800],
-  ["腕セット(二の腕・肘下・両脇・手の甲指)_12回", 12, 151200],
-  ["足セット(太もも・膝下・足の甲指)_6回", 6, 79800],
-  ["足セット(太もも・膝下・足の甲指)_12回", 12, 151200],
-  ["足セット(太もも・膝下・足の甲指)_9回", 9, 117000],
-  ["腕セット(二の腕・肘下・両脇・手の甲指)_9回", 9, 117000],
-  ["【エレポレ】全身ALL(フェイス+全身+陰部4ヶ所)_24回", 24, 1034419],
-  ["【エレポレ】全身ALL(フェイス+全身+陰部4ヶ所)_12回", 12, 642816],
-  ["【エレポレ】全身ALL(フェイス+全身+陰部4ヶ所)_9回", 9, 543456],
-  ["【エレポレ】フェイス+全身(上半身+下半身)_24回", 24, 797184],
-  ["【エレポレ】フェイス+全身(上半身+下半身)_12回", 12, 489216],
-  ["【エレポレ】フェイス+全身(上半身+下半身)_9回", 9, 413100],
-  ["【エレポレ】フェイス+陰部脱毛4ヶ所_24回", 24, 466867],
-  ["【エレポレ】フェイス+陰部脱毛4ヶ所_12回", 12, 293376],
-  ["【エレポレ】フェイス+陰部脱毛4ヶ所_9回", 9, 252756],
-  ["【エレポレ】全身(上半身+下半身)+陰部脱毛4ヶ所_24回", 24, 804787],
-  ["【エレポレ】全身(上半身+下半身)+陰部脱毛4ヶ所_12回", 12, 503040],
-  ["【エレポレ】全身(上半身+下半身)+陰部脱毛4ヶ所_9回", 9, 421056],
-  ["【エレポレ】フェイス_24回", 24, 358800],
-  ["【エレポレ】フェイス_12回", 12, 218400],
-  ["【エレポレ】フェイス_9回", 9, 180000],
-  ["【エレポレ】全身(上半身+下半身)_24回", 24, 886800],
-  ["【エレポレ】全身(上半身+下半身)_12回", 12, 546000],
-  ["【エレポレ】全身(上半身+下半身)_9回", 9, 427500],
-  ["【エレポレ】全身(上半身+下半身)_6回", 6, 231000],
-  ["【エレポレ】陰部脱毛4ヶ所_24回", 24, 370680],
-  ["【エレポレ】陰部脱毛4ヶ所_12回", 12, 240000],
-  ["【エレポレ】陰部脱毛4ヶ所_9回", 9, 191700],
-  ["フェイス_24回", 24, 310800],
-  ["フェイス+全身(上半身+下半身)_24回", 24, 658944],
-  ["フェイス+陰部脱毛4ヶ所_24回", 24, 405427],
-  ["全身ALL(フェイス+全身+陰部4ヶ所)_24回", 24, 865459],
-  ["全身(上半身+下半身)_24回", 24, 718800],
-  ["陰部脱毛4ヶ所_24回", 24, 322680],
-  ["全身(上半身+下半身)+陰部脱毛4ヶ所_24回", 24, 666547],
+  ["新規+追加", "フェイス_6回", 6, 98000],
+  ["新規+追加", "フェイス_9回", 9, 144000],
+  ["新規+追加", "フェイス_12回", 12, 182400],
+  ["新規+追加", "フェイス+全身(上半身+下半身)_6回", 6, 236880],
+  ["新規+追加", "フェイス+全身(上半身+下半身)_9回", 9, 330480],
+  ["新規+追加", "フェイス+全身(上半身+下半身)_12回", 12, 400896],
+  ["新規+追加", "フェイス+陰部脱毛4ヶ所_6回", 6, 146880],
+  ["新規+追加", "フェイス+陰部脱毛4ヶ所_9回", 9, 203796],
+  ["新規+追加", "フェイス+陰部脱毛4ヶ所_12回", 12, 247296],
+  ["新規+追加", "全身ALL(フェイス+全身+陰部4ヶ所)_6回", 6, 313200],
+  ["新規+追加", "全身ALL(フェイス+全身+陰部4ヶ所)_9回", 9, 436356],
+  ["新規+追加", "全身ALL(フェイス+全身+陰部4ヶ所)_12回", 12, 531456],
+  ["新規+追加", "腕セット(二の腕・肘下・両脇・手の甲指)_6回", 6, 79800],
+  ["新規+追加", "腕セット(二の腕・肘下・両脇・手の甲指)_12回", 12, 151200],
+  ["新規+追加", "足セット(太もも・膝下・足の甲指)_6回", 6, 79800],
+  ["新規+追加", "足セット(太もも・膝下・足の甲指)_12回", 12, 151200],
+  ["新規+追加", "足セット(太もも・膝下・足の甲指)_9回", 9, 117000],
+  ["新規+追加", "腕セット(二の腕・肘下・両脇・手の甲指)_9回", 9, 117000],
+  ["新規", "【エレポレ】全身ALL(フェイス+全身+陰部4ヶ所)_24回", 24, 1034419],
+  ["新規", "【エレポレ】全身ALL(フェイス+全身+陰部4ヶ所)_12回", 12, 642816],
+  ["新規", "【エレポレ】全身ALL(フェイス+全身+陰部4ヶ所)_9回", 9, 543456],
+  ["新規", "【エレポレ】フェイス+全身(上半身+下半身)_24回", 24, 797184],
+  ["新規", "【エレポレ】フェイス+全身(上半身+下半身)_12回", 12, 489216],
+  ["新規", "【エレポレ】フェイス+全身(上半身+下半身)_9回", 9, 413100],
+  ["新規", "【エレポレ】フェイス+陰部脱毛4ヶ所_24回", 24, 466867],
+  ["新規", "【エレポレ】フェイス+陰部脱毛4ヶ所_12回", 12, 293376],
+  ["新規", "【エレポレ】フェイス+陰部脱毛4ヶ所_9回", 9, 252756],
+  ["新規", "【エレポレ】全身(上半身+下半身)+陰部脱毛4ヶ所_24回", 24, 804787],
+  ["新規", "【エレポレ】全身(上半身+下半身)+陰部脱毛4ヶ所_12回", 12, 503040],
+  ["新規", "【エレポレ】全身(上半身+下半身)+陰部脱毛4ヶ所_9回", 9, 421056],
+  ["新規", "【エレポレ】フェイス_24回", 24, 358800],
+  ["新規", "【エレポレ】フェイス_12回", 12, 218400],
+  ["新規", "【エレポレ】フェイス_9回", 9, 180000],
+  ["新規", "【エレポレ】全身(上半身+下半身)_24回", 24, 886800],
+  ["新規", "【エレポレ】全身(上半身+下半身)_12回", 12, 546000],
+  ["新規", "【エレポレ】全身(上半身+下半身)_9回", 9, 427500],
+  ["新規", "【エレポレ】全身(上半身+下半身)_6回", 6, 231000],
+  ["新規", "【エレポレ】陰部脱毛4ヶ所_24回", 24, 370680],
+  ["新規", "【エレポレ】陰部脱毛4ヶ所_12回", 12, 240000],
+  ["新規", "【エレポレ】陰部脱毛4ヶ所_9回", 9, 191700],
+  ["新規+追加", "フェイス_24回", 24, 310800],
+  ["新規+追加", "フェイス+全身(上半身+下半身)_24回", 24, 658944],
+  ["新規+追加", "フェイス+陰部脱毛4ヶ所_24回", 24, 405427],
+  ["新規+追加", "全身ALL(フェイス+全身+陰部4ヶ所)_24回", 24, 865459],
+  ["新規+追加", "全身(上半身+下半身)_24回", 24, 718800],
+  ["新規+追加", "陰部脱毛4ヶ所_24回", 24, 322680],
+  ["新規+追加", "全身(上半身+下半身)+陰部脱毛4ヶ所_24回", 24, 666547],
+  ["追加", "EPボディ(施術部位:上半身+下半身)_12回", 12, 213120],
+  ["追加", "EPボディ(施術部位:上半身+下半身+陰部)_12回", 12, 311520],
+  ["追加", "エレクトロポレーション脱毛12回(フェイス)", 12, 216700],
+  ["追加", "全⾝(上半身+下半身)+ヒゲ全体6回+エレポレ脱毛", 6, 242100],
+  ["追加", "全⾝(上半身+下半身)+ヒゲ全体12回+エレポレ脱毛", 12, 455760],
+  ["追加", "全⾝(上半身+下半身)+ヒゲ全体+VIO6回+エレポレ脱毛", 6, 310500],
+  ["追加", "眉+小鼻_6回", 6, 48000],
+  ["追加", "眉+小鼻_9回", 9, 63900],
+  ["追加", "眉+小鼻_12回", 12, 75400],
+  ["追加", "EPボディ(施術部位:上半身+下半身)_6回", 6, 133200],
+  ["追加", "EPボディ(施術部位:上半身+下半身)_9回", 9, 179820],
+  ["追加", "EPボディ(施術部位:上半身+下半身+陰部)_6回", 6, 194700],
+  ["追加", "EPボディ(施術部位:上半身+下半身+陰部)_9回", 9, 262845],
+  ["追加", "エレクトロポレーション脱毛6回(フェイス)", 6, 149970],
+  ["追加", "エレクトロポレーション脱毛9回(フェイス)", 9, 196057],
+  ["追加", "どこでも脱毛(制限時間の中でいずれかの部位)_20分_6回", 6, 104700],
+  ["追加", "どこでも脱毛(制限時間の中でいずれかの部位)_20分_9回", 9, 146025],
+  ["追加", "どこでも脱毛(制限時間の中でいずれかの部位)_20分_12回", 12, 178000],
+  ["追加", "どこでも脱毛(制限時間の中でいずれかの部位)_40分_6回", 6, 179700],
+  ["追加", "どこでも脱毛(制限時間の中でいずれかの部位)_40分_9回", 9, 256500],
+  ["追加", "どこでも脱毛(制限時間の中でいずれかの部位)_40分_12回", 12, 329000],
 ];
 
-/* 回数別割引率（ON/OFFは画面上のトグルで切替） */
+/* 新規：回数別割引率（ON/OFFは画面上のトグルで切替） */
 const DISCOUNT_RATES = { 9: 0.15, 12: 0.20, 24: 0.20 };
-/* 特別割：12回以上 かつ セットプラン（プラン名に「ALL」か、かっこの外に「+」を含む）に、回数割引後の金額からさらに20%OFF
+/* 追加：全プラン共通で 10% または 20% の割引を選択可能 */
+const ADD_DISCOUNT_RATES = [0.1, 0.2];
+/* 特別割（新規のみ）：12回以上 かつ セットプラン（プラン名に「ALL」か、かっこの外に「+」を含む）に、回数割引後の金額からさらに20%OFF
    ※「全身(上半身+下半身)」のように、かっこ内の「+」だけのプランはセットプランではないため対象外 */
 const SPECIAL_RATE = 0.20;
 const SPECIAL_MIN_COUNT = 12;
@@ -438,17 +475,38 @@ const MAX_MONTHS = 50;
 const DEFAULT_MONTHS = 36;
 const DEFAULT_DOWN = 10000; // 頭金の初期値
 
-/* ===== プランを「プラン名 × 回数」に整理 ===== */
-const PLANS = new Map(); // key: プラン名（回数なし） -> {key, label, category, options:[{count, price}]}
-for (const [fullName, count, price] of PRICE_TABLE) {
-  const key = fullName.replace(/_\d+回$/, "");
-  const category = key.startsWith("【エレポレ】") ? "エレポレ" : "通常";
-  const label = key.replace("【エレポレ】", "");
-  if (!PLANS.has(key)) PLANS.set(key, { key, label, category, options: [] });
-  PLANS.get(key).options.push({ count, price });
+/* ===== タブ（新規／追加）ごとに、プランを「プラン名 × 回数」に整理 ===== */
+const TABS = {
+  new: { name: "新規", sub: "初回カウンセリング", categories: ["通常", "エレポレ"] },
+  add: { name: "追加", sub: "施術時の追加提案",   categories: ["追加専用", "通常"] },
+};
+const CATEGORY_LABELS = { 通常: "通常プラン", エレポレ: "【エレポレ】", 追加専用: "追加専用プラン" };
+
+/* プラン名から回数部分を除いてまとめる（例：「眉+小鼻_6回」「エレクトロポレーション脱毛6回(フェイス)」→ 回数なしの名前）
+   ※「全⾝」のような互換文字はNFKCで通常の「全身」に揃える */
+const planKeyOf = (name, count) => name.normalize("NFKC").replace(new RegExp(`_?${count}回`), "");
+
+const PLANS_BY_TAB = { new: new Map(), add: new Map() }; // key: プラン名（回数なし） -> {key, label, category, options:[{count, price}]}
+for (const [usage, fullName, count, price] of PRICE_TABLE) {
+  const key = planKeyOf(fullName, count);
+  const tabs = usage.split("+").map(u => u === "新規" ? "new" : "add");
+  for (const tab of tabs) {
+    const plans = PLANS_BY_TAB[tab];
+    if (!plans.has(key)) {
+      const category = usage === "追加" ? "追加専用" : key.startsWith("【エレポレ】") ? "エレポレ" : "通常";
+      const label = key.replace("【エレポレ】", "").replace(/_/g, " ");
+      plans.set(key, { key, label, category, options: [] });
+    }
+    plans.get(key).options.push({ count, price });
+  }
 }
-PLANS.forEach(p => p.options.sort((a, b) => a.count - b.count));
-const CATEGORIES = ["通常", "エレポレ"];
+/* 追加タブ：24回が無いプランは「12回の定価 × 2」で24回を用意 */
+PLANS_BY_TAB.add.forEach(p => {
+  const twelve = p.options.find(o => o.count === 12);
+  if (twelve && !p.options.some(o => o.count === 24)) p.options.push({ count: 24, price: twelve.price * 2 });
+});
+Object.values(PLANS_BY_TAB).forEach(m => m.forEach(p => p.options.sort((a, b) => a.count - b.count)));
+let PLANS = PLANS_BY_TAB.new; // 表示中のタブのプラン
 
 /* ===== 状態 ===== */
 const TIERS = [
@@ -464,20 +522,31 @@ function defaultState() {
     instOpen: false,
     discounts: { 9: false, 12: false, 24: false }, // 割引は初期状態では未使用
     special: false,
-    calc: "addon",                    // 分割の計算方式：addon（社内標準）／apr
+    calc: "addon",                   // 分割の計算方式：addon（社内標準）／apr
     rates: { addon: 0.8, apr: 14.8 }, // アドオン料率（%/月）／実質年率（%/年）
-    patterns: {
-      matsu: newPattern([slot("全身ALL(フェイス+全身+陰部4ヶ所)", 24), emptySlot(), emptySlot()]),
-      take:  newPattern([slot("フェイス+全身(上半身+下半身)", 24), emptySlot(), emptySlot()]),
-      ume:   newPattern([slot("【エレポレ】フェイス", 24), emptySlot(), emptySlot()]),
+    tab: "new",
+    // タブごとに入力内容を別々に保持（切り替えても消えない）
+    byTab: {
+      new: {
+        matsu: newPattern([slot("全身ALL(フェイス+全身+陰部4ヶ所)", 24), emptySlot(), emptySlot()]),
+        take:  newPattern([slot("フェイス+全身(上半身+下半身)", 24), emptySlot(), emptySlot()]),
+        ume:   newPattern([slot("【エレポレ】フェイス", 24), emptySlot(), emptySlot()]),
+      },
+      add: {
+        matsu: newPattern([slot("全身(上半身+下半身)+ヒゲ全体+エレポレ脱毛", 12), emptySlot(), emptySlot()]),
+        take:  newPattern([slot("EPボディ(施術部位:上半身+下半身+陰部)", 12), emptySlot(), emptySlot()]),
+        ume:   newPattern([slot("眉+小鼻", 12), emptySlot(), emptySlot()]),
+      },
     },
+    get patterns() { return this.byTab[this.tab]; }, // 表示中のタブの松竹梅
   };
 }
 function slot(plan, count) { return { plan, count }; }
 function emptySlot() { return slot("", null); }
-/* discOn / spOn：null＝全体設定に従う、true/false＝このカードだけ個別にON/OFF */
+/* 新規タブ：discOn / spOn（null＝全体設定に従う、true/false＝このカードだけ個別にON/OFF）
+   追加タブ：addRates（このカードの回数ごとの割引率 {回数: 0／0.1／0.2}） */
 function newPattern(slots) {
-  return { slots, months: DEFAULT_MONTHS, down: DEFAULT_DOWN, discOn: null, spOn: null };
+  return { slots, months: DEFAULT_MONTHS, down: DEFAULT_DOWN, discOn: null, spOn: null, addRates: {} };
 }
 let state = defaultState();
 
@@ -487,15 +556,27 @@ const yen = n => "¥" + Math.round(n).toLocaleString("ja-JP");
 /* 割引の適用（カードの個別設定があれば優先、なければ全体設定） */
 const countDiscOn = (pat, s) => pat.discOn ?? !!state.discounts[s.count];
 const patSpecialOn = pat => pat.spOn ?? state.special;
+/* 追加の割引率：カードごと・回数ごとに設定 */
+const addRateOf = (pat, count) => pat.addRates[count] || 0;
+const selectedCounts = pat => [...new Set(pat.slots.filter(s => PLANS.has(s.plan)).map(s => s.count))];
+/* カードの「10%OFF／20%OFF」ボタンの表示状態：選択中の回数の割引率がそろっていればその率 */
+function patAddRateShown(pat) {
+  const rates = [...new Set(selectedCounts(pat).map(c => addRateOf(pat, c)))];
+  return rates.length === 1 ? rates[0] : null;
+}
+/* プランの割引率：新規＝回数別の固定率、追加＝回数ごとに 10%／20% を選択 */
+const slotRate = (pat, s) => state.tab === "add"
+  ? addRateOf(pat, s.count)
+  : countDiscOn(pat, s) ? (DISCOUNT_RATES[s.count] || 0) : 0;
 
 function priceOf(pat, s) {
   const plan = PLANS.get(s.plan);
   if (!plan) return null;
   const opt = plan.options.find(o => o.count === s.count);
   if (!opt) return null;
-  const rate = countDiscOn(pat, s) ? (DISCOUNT_RATES[opt.count] || 0) : 0;
+  const rate = slotRate(pat, s);
   const afterCount = Math.floor(opt.price * (1 - rate));
-  const special = isSpecialEligible(s.plan, s.count) && patSpecialOn(pat);
+  const special = state.tab === "new" && isSpecialEligible(s.plan, s.count) && patSpecialOn(pat); // 特別割は新規のみ
   const discounted = special ? Math.floor(afterCount * (1 - SPECIAL_RATE)) : afterCount;
   return { list: opt.price, rate, afterCount, special, discounted };
 }
@@ -539,8 +620,8 @@ const cardsEl = document.getElementById("cards");
 
 function planOptionsHtml() {
   let html = `<option value="">― プランを選択 ―</option>`;
-  for (const cat of CATEGORIES) {
-    html += `<optgroup label="${cat === "エレポレ" ? "【エレポレ】" : "通常プラン"}">`;
+  for (const cat of TABS[state.tab].categories) {
+    html += `<optgroup label="${CATEGORY_LABELS[cat]}">`;
     PLANS.forEach(p => {
       if (p.category === cat) html += `<option value="${p.key}">${cat === "エレポレ" ? "エレポレ｜" : ""}${p.label}</option>`;
     });
@@ -566,8 +647,9 @@ function buildCards() {
           <div class="section-title">プラン選択（最大3つ）</div>
           <div class="card-disc staff" data-role="cdisc">
             <div class="cdisc-btns" data-role="cdiscBtns" hidden>
-              <button class="dtog" data-dt="count">回数割引</button>
-              <button class="dtog" data-dt="sp">特別割</button>
+              <button class="dtog" data-dt="count" data-for="new">回数割引</button>
+              <button class="dtog" data-dt="sp" data-for="new">特別割</button>
+              ${ADD_DISCOUNT_RATES.map(r => `<button class="dtog" data-ar="${r}" data-for="add">${Math.round(r * 100)}%OFF</button>`).join("")}
             </div>
             <button class="cdisc-fold" data-role="cdiscFold" aria-expanded="false" title="このカードの割引設定">割引<span class="chev">▾</span></button>
           </div>
@@ -591,7 +673,7 @@ function buildCards() {
         <div class="section-title">一括払い</div>
         <div class="rows num">
           <span class="lbl">定価合計</span><span class="val" data-role="list"></span>
-          <span class="lbl">回数割引</span><span class="val minus" data-role="disc"></span>
+          <span class="lbl">${state.tab === "add" ? "割引" : "回数割引"}</span><span class="val minus" data-role="disc"></span>
           <span class="lbl sp-lbl" data-role="spRow">特別割</span><span class="val minus" data-role="spRow"><span data-role="spDisc"></span></span>
         </div>
         <div class="total"><span class="lbl">お支払総額</span><span class="val num" data-role="total"></span></div>
@@ -653,9 +735,14 @@ function buildCards() {
       cdiscFold.setAttribute("aria-expanded", !btns.hidden);
     });
     card.querySelector('[data-role=cdiscBtns]').addEventListener("click", e => {
-      const btn = e.target.closest("[data-dt]");
+      const btn = e.target.closest("[data-dt], [data-ar]");
       if (!btn) return;
-      if (btn.dataset.dt === "count") pat.discOn = !patCountDiscShown(pat);
+      if (btn.dataset.ar) {
+        // 追加：選択中の回数に 10%／20% を適用（同じ率をもう一度押すと解除）
+        const r = +btn.dataset.ar;
+        const next = patAddRateShown(pat) === r ? 0 : r;
+        selectedCounts(pat).forEach(c => { pat.addRates[c] = next; });
+      } else if (btn.dataset.dt === "count") pat.discOn = !patCountDiscShown(pat);
       else pat.spOn = !patSpecialOn(pat);
       updateCard(tier);
     });
@@ -717,7 +804,7 @@ function updateCard(tier) {
 
     slotEl.querySelector('[data-role=counts]').innerHTML = plan
       ? plan.options.map(o => {
-          const r = countDiscOn(pat, o) ? (DISCOUNT_RATES[o.count] || 0) : 0;
+          const r = slotRate(pat, o);
           return `<button class="chip ${o.count === s.count ? "active" : ""}" data-count="${o.count}">${o.count}回${r ? `<small>${Math.round(r * 100)}%OFF</small>` : ""}</button>`;
         }).join("")
       : "";
@@ -735,6 +822,7 @@ function updateCard(tier) {
 
   card.querySelector('[data-dt=count]').classList.toggle("off", !patCountDiscShown(pat));
   card.querySelector('[data-dt=sp]').classList.toggle("off", !patSpecialOn(pat));
+  card.querySelectorAll('[data-ar]').forEach(b => b.classList.toggle("off", +b.dataset.ar !== patAddRateShown(pat)));
 
   const t = patternTotals(tier);
   card.querySelector('[data-role=sub]').textContent = t.n ? `${t.n}プラン選択中` : "プラン未選択";
@@ -814,6 +902,7 @@ discFoldBtn.addEventListener("click", () => {
   discPanel.hidden = !open;
   discFoldBtn.setAttribute("aria-expanded", open);
 });
+/* 新規タブの全体割引の状態表示（追加タブの割引は各カードで設定） */
 function updateDiscStatus() {
   const on = Object.keys(DISCOUNT_RATES).filter(c => state.discounts[c]).map(c => c + "回");
   if (state.special) on.push("特別割");
@@ -821,8 +910,8 @@ function updateDiscStatus() {
   el.textContent = on.length ? on.join("・") + " 適用中" : "すべてOFF";
   el.classList.toggle("none", !on.length);
 }
-/* 全体設定を切り替えたら、その割引のカード個別設定はリセットして全カードに反映 */
-const forEachPattern = fn => TIERS.forEach(t => fn(state.patterns[t.id]));
+/* 全体設定を切り替えたら、その割引のカード個別設定はリセットして新規の全カードに反映 */
+const forEachPattern = fn => TIERS.forEach(t => fn(state.byTab.new[t.id]));
 document.querySelectorAll("[data-disc]").forEach(cb => cb.addEventListener("change", () => {
   state.discounts[cb.dataset.disc] = cb.checked;
   forEachPattern(p => { p.discOn = null; });
@@ -878,20 +967,36 @@ function setMode(mode) {
     card.querySelector("[data-role=title]").textContent = name;
   });
 }
+/* ===== 新規／追加タブの切替（入力内容はタブごとに保持） ===== */
+function render() {
+  PLANS = PLANS_BY_TAB[state.tab];
+  document.body.dataset.tab = state.tab;
+  updateDiscStatus();
+  document.querySelectorAll("#tabs [data-tab]").forEach(b => {
+    const active = b.dataset.tab === state.tab;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-selected", active);
+  });
+  buildCards(); setMode(state.mode); setInstOpen(state.instOpen); updateAll();
+}
+document.getElementById("tabs").addEventListener("click", e => {
+  const b = e.target.closest("[data-tab]");
+  if (!b || b.dataset.tab === state.tab) return;
+  state.tab = b.dataset.tab;
+  render();
+});
+
 document.getElementById("resetBtn").addEventListener("click", () => {
+  const tab = state.tab; // 表示中のタブはそのまま
   state = defaultState();
+  state.tab = tab;
   document.querySelectorAll("[data-disc]").forEach(cb => cb.checked = state.discounts[cb.dataset.disc]);
   document.getElementById("specialDisc").checked = state.special;
-  syncCalc();
-  buildCards(); setMode(state.mode); setInstOpen(state.instOpen); updateDiscStatus(); updateAll();
+  syncCalc(); render();
 });
 
 syncCalc();
-buildCards();
-setMode(state.mode);
-setInstOpen(state.instOpen);
-updateDiscStatus();
-updateAll();
+render();
 </script>
 </body>
 </html>
