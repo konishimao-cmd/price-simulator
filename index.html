@@ -166,9 +166,22 @@
   .clear:hover { color: var(--off); }
   .counts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding-left: 28px; }
   .counts:empty { display: none; }
+  /* 単パーツの部位選択（閉じているときは選んだ部位だけ） */
+  .parts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding-left: 28px; }
+  .parts:empty { display: none; }
+  .parts:not(.open) .chip[data-part]:not(.active) { display: none; }
+  .parts .chip.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .parts .chip.active::before { content: "✓ "; }
+  .parts.open .chip[data-part]:not(.active) { border-style: dashed; color: var(--muted); }
+  .parts .parts-toggle { border-style: dashed; color: var(--accent); }
+  .variants { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; padding-left: 28px; }
+  .variants:empty { display: none; }
+  .variants-lbl { font-size: 11px; font-weight: 700; color: var(--muted); }
   /* 回数は選択中のものだけ表示。押すと他の回数が開く */
-  .counts:not(.open) .chip:not(.active) { display: none; }
-  .counts:not(.open) .chip.active.more::after { content: "▾"; font-size: 11px; margin-left: 2px; opacity: .85; }
+  .counts:not(.open) .chip:not(.active),
+  .variants:not(.open) .chip:not(.active) { display: none; }
+  .counts:not(.open) .chip.active.more::after,
+  .variants:not(.open) .chip.active::after { content: "▾"; font-size: 11px; margin-left: 2px; opacity: .85; }
   .chip {
     border: 1px solid var(--border); background: var(--surface); border-radius: 8px;
     padding: 4px 10px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--text);
@@ -184,6 +197,7 @@
   .slot-price b { font-size: 15px; }
   .sp-tag { background: var(--off); color: #fff; font-weight: 700; font-size: 11px; padding: 1px 6px; border-radius: 4px; }
   .rows .sp-lbl { color: var(--off); font-weight: 700; }
+  .only-tag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 4px; border: 1px solid var(--off); color: var(--off); font-size: 10px; font-weight: 700; vertical-align: 1px; }
   .toggle.sp .pct::before { content: "★ "; }
 
   /* 新規：3回特典（15万円以上のプラン選択時のみ） */
@@ -363,7 +377,7 @@
 
     <div class="group staff" data-for="new">
       <button class="fold-btn" id="discFoldBtn" aria-expanded="false" aria-controls="discPanel">
-        <span>回数割引</span><span class="fold-status" id="discStatus"></span><span class="chev">▾</span>
+        <span>乗り換え割引</span><span class="fold-status" id="discStatus"></span><span class="chev">▾</span>
       </button>
     </div>
 
@@ -387,7 +401,7 @@
   </div>
   <div class="fold-panel staff" id="discPanel" data-for="new" hidden>
     <div class="bar">
-      <span class="group-label">全体に適用（各カードの「割引」で個別にも切替可）</span>
+      <span class="group-label">乗り換え割引（他社会員様限定）を全体に適用（各カードの「割引」で個別にも切替可）</span>
       <label class="toggle" data-for="new"><input type="checkbox" data-disc="9"><span class="sw"></span><span class="txt">9回 <span class="pct">15%OFF</span></span></label>
       <label class="toggle" data-for="new"><input type="checkbox" data-disc="12"><span class="sw"></span><span class="txt">12回 <span class="pct">20%OFF</span></span></label>
       <label class="toggle" data-for="new"><input type="checkbox" data-disc="24"><span class="sw"></span><span class="txt">24回 <span class="pct">20%OFF</span></span></label>
@@ -401,16 +415,18 @@
 </main>
 
 <ul class="note">
-  <li>金額は価格表（価格表 (4).xlsx）の「金額」を定価として、回数に応じた割引を適用しています（1円未満切り捨て）。新規・追加タブには、A列「使用用途」に応じたプランを表示しています。</li>
-  <li class="staff" data-for="new">特別割（新規のみ）は「12回以上」かつ「セットプラン（ALL、またはかっこの外に ＋ を含む）」が対象で、回数割引後の金額からさらに20%OFFします。</li>
+  <li>金額は価格表（価格表 (5).xlsx）の「金額」を定価として、回数に応じた割引を適用しています（1円未満切り捨て）。新規・追加タブには、A列「使用用途」に応じたプランを表示しています。</li>
+  <li class="staff" data-for="new">特別割（新規のみ）は「12回以上」かつ「セットプラン（ALL、またはかっこの外に ＋ を含む）」が対象で、乗り換え割引後の金額からさらに20%OFFします。</li>
   <li class="staff" data-for="add">追加プランの割引は、各カードの「割引」で 10%OFF／20%OFF を押すと、そのカードで選択中の回数に適用されます（回数ごとに記憶。もう一度押すと解除）。アフター保証は「保証 50%／80%／90%OFF」から選択、セレクト脱毛（追加CP）は割引不可です。24回が無いプランは「12回の定価 × 2」を24回の定価として表示しています。</li>
-  <li class="staff" data-for="new">割引は上部の「回数割引」で全体に一括適用、各カードの「割引」でカードごとに個別適用できます（全体を切り替えると個別設定はリセットされます）。</li>
+  <li data-for="new" id="transferNote" hidden>乗り換え割引は、他社脱毛サロン・クリニックの会員様限定の割引です。</li>
+  <li class="staff" data-for="new">単パーツは割引（乗り換え割引・特別割）の対象外です。</li>
+  <li class="staff" data-for="new">割引は上部の「乗り換え割引」で全体に一括適用、各カードの「割引」でカードごとに個別適用できます（全体を切り替えると個別設定はリセットされます）。</li>
   <li>分割払いは概算です（最大50回）。頭金は分割手数料の対象外です。実際のお支払額は信販会社の計算により異なる場合があります。</li>
   <li class="staff">計算方式：アドオン方式＝分割手数料は「分割元金 × 月あたり料率 × 回数」。年利方式＝元利均等返済・実質年率で計算。</li>
 </ul>
 
 <script>
-/* ===== 価格表データ（価格表 (4).xlsx A〜D列：使用用途・プラン名・回数・金額） ===== */
+/* ===== 価格表データ（価格表 (5).xlsx A〜D列：使用用途・プラン名・回数・金額） ===== */
 const PRICE_TABLE = [
   ["新規+追加", "フェイス_6回", 6, 98000],
   ["新規+追加", "フェイス_9回", 9, 144000],
@@ -461,7 +477,61 @@ const PRICE_TABLE = [
   ["新規+追加", "全身(上半身+下半身)+陰部脱毛4ヶ所_24回", 24, 666547],
   ["新規CP", "ヒゲ脱毛3部位(鼻下、口下、あご)_3回", 3, 7800],
   ["新規CP", "全⾝脱⽑(上半身+下半身)3回", 3, 9900],
-  // ※価格表 (4) の行52「ヒゲ脱毛3部位(鼻下、口下、あご)_3回 ¥3,300」は行50と同名のため保留中
+  ["新規CP", "ヒゲ脱毛3部位(鼻下、口下、あご)_3回", 3, 3300], // 同名・同回数で金額違い → 画面で ¥7,800／¥3,300 を切替
+  ["新規（単パーツ）", "鼻下_6回", 6, 36000],
+  ["新規（単パーツ）", "鼻下_12回", 12, 64800],
+  ["新規（単パーツ）", "口下_6回", 6, 36000],
+  ["新規（単パーツ）", "口下_12回", 12, 64800],
+  ["新規（単パーツ）", "あご_6回", 6, 36000],
+  ["新規（単パーツ）", "あご_12回", 12, 64800],
+  ["新規（単パーツ）", "ほほ_6回", 6, 36000],
+  ["新規（単パーツ）", "ほほ_12回", 12, 64800],
+  ["新規（単パーツ）", "もみあげ_6回", 6, 36000],
+  ["新規（単パーツ）", "もみあげ_12回", 12, 64800],
+  ["新規（単パーツ）", "Vライン_6回", 6, 41800],
+  ["新規（単パーツ）", "Vライン_12回", 12, 79200],
+  ["新規（単パーツ）", "Iライン_6回", 6, 41800],
+  ["新規（単パーツ）", "Iライン_12回", 12, 79200],
+  ["新規（単パーツ）", "Oライン_6回", 6, 41800],
+  ["新規（単パーツ）", "Oライン_12回", 12, 79200],
+  ["新規（単パーツ）", "お尻_6回", 6, 41800],
+  ["新規（単パーツ）", "お尻_12回", 12, 79200],
+  ["新規（単パーツ）", "胸_6回", 6, 41800],
+  ["新規（単パーツ）", "胸_12回", 12, 79200],
+  ["新規（単パーツ）", "腹_6回", 6, 41800],
+  ["新規（単パーツ）", "腹_12回", 12, 79200],
+  ["新規（単パーツ）", "両脇_6回", 6, 41800],
+  ["新規（単パーツ）", "両脇_12回", 12, 79200],
+  ["新規（単パーツ）", "ひじ下_6回", 6, 41800],
+  ["新規（単パーツ）", "ひじ下_12回", 12, 79200],
+  ["新規（単パーツ）", "手の甲指_6回", 6, 41800],
+  ["新規（単パーツ）", "手の甲指_12回", 12, 79200],
+  ["新規（単パーツ）", "ひざ下_6回", 6, 41800],
+  ["新規（単パーツ）", "ひざ下_12回", 12, 79200],
+  ["新規（単パーツ）", "足の甲指_6回", 6, 41800],
+  ["新規（単パーツ）", "足の甲指_12回", 12, 79200],
+  ["新規（単パーツ）", "あご下、首_6回", 6, 48000],
+  ["新規（単パーツ）", "あご下、首_12回", 12, 75400],
+  ["新規（単パーツ）", "ひざ上_6回", 6, 41800],
+  ["新規（単パーツ）", "ひざ上_12回", 12, 79200],
+  ["新規（単パーツ）", "ほほ_9回", 9, 52200],
+  ["新規（単パーツ）", "鼻下_9回", 9, 52200],
+  ["新規（単パーツ）", "もみあげ_9回", 9, 52200],
+  ["新規（単パーツ）", "口下_9回", 9, 52200],
+  ["新規（単パーツ）", "あご_9回", 9, 52200],
+  ["新規（単パーツ）", "あご下、首_9回", 9, 63900],
+  ["新規（単パーツ）", "両脇_9回", 9, 60300],
+  ["新規（単パーツ）", "胸_9回", 9, 60300],
+  ["新規（単パーツ）", "腹_9回", 9, 60300],
+  ["新規（単パーツ）", "ひじ下_9回", 9, 60300],
+  ["新規（単パーツ）", "手の甲指_9回", 9, 60300],
+  ["新規（単パーツ）", "ひざ上_9回", 9, 60300],
+  ["新規（単パーツ）", "ひざ下_9回", 9, 60300],
+  ["新規（単パーツ）", "足の甲指_9回", 9, 60300],
+  ["新規（単パーツ）", "Iライン_9回", 9, 60300],
+  ["新規（単パーツ）", "Oライン_9回", 9, 60300],
+  ["新規（単パーツ）", "Vライン_9回", 9, 60300],
+  ["新規（単パーツ）", "お尻_9回", 9, 60300],
   ["追加", "EPボディ(施術部位:上半身+下半身)_12回", 12, 213120],
   ["追加", "EPボディ(施術部位:上半身+下半身+陰部)_12回", 12, 311520],
   ["追加", "エレクトロポレーション脱毛12回(フェイス)", 12, 216700],
@@ -528,15 +598,15 @@ const DEFAULT_DOWN = 10000; // 頭金の初期値
 
 /* ===== タブ（新規／追加）ごとに、プランを「プラン名 × 回数」に整理 ===== */
 const TABS = {
-  new: { name: "新規", sub: "初回カウンセリング", categories: ["通常", "エレポレ", "新規CP"] },
+  new: { name: "新規", sub: "初回カウンセリング", categories: ["通常", "エレポレ", "単パーツ", "新規CP"], defaultCount: 12 },
   add: { name: "追加", sub: "施術時の追加提案",   categories: ["追加専用", "追加CP", "アフター保証", "通常"] },
 };
 const CATEGORY_LABELS = {
-  通常: "通常プラン", エレポレ: "【エレポレ】", 新規CP: "新規CP",
+  通常: "通常プラン", エレポレ: "【エレポレ】", 単パーツ: "単パーツ", 新規CP: "新規CP",
   追加専用: "追加専用プラン", 追加CP: "追加CP", アフター保証: "アフター保証",
 };
 /* A列「使用用途」→ 表示グループ（新規・新規+追加の通常プランは名前で通常／エレポレに分ける） */
-const USAGE_CATEGORY = { 新規CP: "新規CP", 追加: "追加専用", 追加CP: "追加CP", 追加AF: "アフター保証" };
+const USAGE_CATEGORY = { "新規（単パーツ）": "単パーツ", 新規CP: "新規CP", 追加: "追加専用", 追加CP: "追加CP", 追加AF: "アフター保証" };
 const isElepore = key => key.startsWith("【エレポレ】");
 
 /* プラン名から回数部分を除いてまとめる（例：「眉+小鼻_6回」「エレクトロポレーション脱毛6回(フェイス)」→ 回数なしの名前）
@@ -546,10 +616,12 @@ const planKeyOf = (name, count) => name.normalize("NFKC").replace(new RegExp(`_?
 /* 新規「3回特典」：A列「新規CP」のプラン。15万円以上のプランを選んだカードにだけ、どちらか1つを無料（¥0）で付けられる
    ※新規CPは通常のプラン選択からも選べる（その場合は価格表の金額がかかる） */
 const BONUS_MIN_PRICE = 150000;
-const BONUS_PLANS = PRICE_TABLE.filter(([usage]) => usage === "新規CP").map(([, fullName, count, price]) => {
+const BONUS_PLANS = [];
+for (const [usage, fullName, count, price] of PRICE_TABLE) {
   const key = planKeyOf(fullName, count);
-  return { key, label: `${key} ${count}回`, price };
-});
+  // 同名プラン（ヒゲ脱毛3部位の ¥3,300 など）は最初の金額を通常価格として1つにまとめる
+  if (usage === "新規CP" && !BONUS_PLANS.some(b => b.key === key)) BONUS_PLANS.push({ key, label: `${key} ${count}回`, price });
+}
 
 const PLANS_BY_TAB = { new: new Map(), add: new Map() }; // key: プラン名（回数なし） -> {key, label, category, options:[{count, price}]}
 for (const [usage, fullName, count, price] of PRICE_TABLE) {
@@ -573,6 +645,17 @@ PLANS_BY_TAB.add.forEach(p => {
 Object.values(PLANS_BY_TAB).forEach(m => m.forEach(p => p.options.sort((a, b) => a.count - b.count)));
 let PLANS = PLANS_BY_TAB.new; // 表示中のタブのプラン
 
+/* 回数の一覧（重複なし）と、その回数で選べる金額の一覧 */
+const countsOf = plan => [...new Set(plan.options.map(o => o.count))];
+const variantsOf = (plan, count) => plan.options.filter(o => o.count === count);
+/* プランを選んだときの回数：新規は12回（無ければ直前の回数→最大回数）、追加は直前の回数→最大回数 */
+function defaultCountFor(plan, prev) {
+  const counts = countsOf(plan);
+  const preferred = TABS[state.tab].defaultCount;
+  if (preferred && counts.includes(preferred)) return preferred;
+  return counts.includes(prev) ? prev : counts[counts.length - 1];
+}
+
 /* ===== 状態 ===== */
 const TIERS = [
   { id: "matsu", badge: "松", name: "松プラン" },
@@ -593,9 +676,9 @@ function defaultState() {
     // タブごとに入力内容を別々に保持（切り替えても消えない）
     byTab: {
       new: {
-        matsu: newPattern([slot("全身ALL(フェイス+全身+陰部4ヶ所)", 24), emptySlot(), emptySlot()]),
-        take:  newPattern([slot("フェイス+全身(上半身+下半身)", 24), emptySlot(), emptySlot()]),
-        ume:   newPattern([slot("【エレポレ】フェイス", 24), emptySlot(), emptySlot()]),
+        matsu: newPattern([slot("全身ALL(フェイス+全身+陰部4ヶ所)", 12), emptySlot(), emptySlot()]),
+        take:  newPattern([slot("フェイス+全身(上半身+下半身)", 12), emptySlot(), emptySlot()]),
+        ume:   newPattern([slot("【エレポレ】フェイス", 12), emptySlot(), emptySlot()]),
       },
       add: {
         matsu: newPattern([slot("全身(上半身+下半身)+ヒゲ全体+エレポレ脱毛", 12), emptySlot(), emptySlot()]),
@@ -606,7 +689,8 @@ function defaultState() {
     get patterns() { return this.byTab[this.tab]; }, // 表示中のタブの松竹梅
   };
 }
-function slot(plan, count) { return { plan, count }; }
+/* variant：同じ回数で金額が複数あるプラン（ヒゲ脱毛3部位 3回の ¥7,800／¥3,300）の何番目の金額か */
+function slot(plan, count) { return { plan, count, variant: 0 }; }
 function emptySlot() { return slot("", null); }
 /* 新規タブ：discOn / spOn（null＝全体設定に従う、true/false＝このカードだけ個別にON/OFF）、bonus（3回特典のプラン名。""＝なし）
    追加タブ：addRates（このカードの割引グループごと・回数ごとの割引率 {normal: {回数: 率}, af: {回数: 率}}） */
@@ -636,27 +720,39 @@ function patAddRateShown(pat, group) {
 /* プランの割引率：新規＝回数別の固定率、追加＝グループ・回数ごとに選択 */
 const slotRate = (pat, s) => state.tab === "add"
   ? (discGroupOf(s.plan) ? addRateOf(pat, discGroupOf(s.plan), s.count) : 0)
+  : isPart(s.plan) ? 0 // 単パーツは割引不可
   : countDiscOn(pat, s) ? (DISCOUNT_RATES[s.count] || 0) : 0;
 
 /* 割引後の金額（1円未満切り捨て）。0.8 などの小数誤差で1円ずれないよう、整数の%で計算 */
 const applyDiscount = (price, rate) => Math.floor(price * (100 - Math.round(rate * 100)) / 100);
 
+/* 単パーツは1つの枠で複数部位を選べる（s.parts：選んだ部位のプラン名。回数は共通） */
+const isPart = key => PLANS.get(key)?.category === "単パーツ";
+const PART_KEYS = () => [...PLANS.values()].filter(p => p.category === "単パーツ").map(p => p.key);
+const slotKeys = s => (isPart(s.plan) && s.parts?.length) ? s.parts : [s.plan];
+
 function priceOf(pat, s) {
   const plan = PLANS.get(s.plan);
   if (!plan) return null;
-  const opt = plan.options.find(o => o.count === s.count);
-  if (!opt) return null;
   const rate = slotRate(pat, s);
-  const afterCount = applyDiscount(opt.price, rate);
   const special = state.tab === "new" && isSpecialEligible(s.plan, s.count) && patSpecialOn(pat); // 特別割は新規のみ
-  const discounted = special ? applyDiscount(afterCount, SPECIAL_RATE) : afterCount;
-  return { list: opt.price, rate, afterCount, special, discounted };
+  let list = 0, afterCount = 0, discounted = 0;
+  for (const key of slotKeys(s)) {
+    const variants = variantsOf(PLANS.get(key), s.count);
+    const opt = variants[s.variant] ?? variants[0];
+    if (!opt) return null;
+    const after = applyDiscount(opt.price, rate);
+    list += opt.price;
+    afterCount += after;
+    discounted += special ? applyDiscount(after, SPECIAL_RATE) : after;
+  }
+  return { list, rate, afterCount, special, discounted };
 }
 
 /* カードの「回数割引」ボタンの表示状態：個別設定、なければ選択中プランに全体設定の割引が1つでも効いているか */
 function patCountDiscShown(pat) {
   if (pat.discOn !== null) return pat.discOn;
-  const counts = pat.slots.filter(s => PLANS.has(s.plan) && DISCOUNT_RATES[s.count]).map(s => s.count);
+  const counts = pat.slots.filter(s => PLANS.has(s.plan) && !isPart(s.plan) && DISCOUNT_RATES[s.count]).map(s => s.count);
   return counts.length ? counts.some(c => state.discounts[c]) : Object.values(state.discounts).some(Boolean);
 }
 
@@ -720,7 +816,7 @@ function buildCards() {
           <div class="card-disc staff" data-role="cdisc">
             <button class="cdisc-fold" data-role="bonusFold" data-for="new" aria-expanded="false" title="3回特典の表示">特典<span class="chev">▾</span></button>
             <div class="cdisc-btns" data-role="cdiscBtns" hidden>
-              <button class="dtog" data-dt="count" data-for="new">回数割引</button>
+              <button class="dtog" data-dt="count" data-for="new">乗り換え割引</button>
               <button class="dtog" data-dt="sp" data-for="new">特別割</button>
               ${Object.entries(ADD_DISCOUNT_GROUPS).map(([g, def]) => def.rates.map(r =>
                 `<button class="dtog" data-ag="${g}" data-ar="${r}" data-for="add">${def.prefix}${Math.round(r * 100)}%OFF</button>`).join("")).join("")}
@@ -738,7 +834,9 @@ function buildCards() {
               </div>
               <button class="clear" data-role="clear" title="クリア">×</button>
             </div>
+            <div class="parts" data-role="parts"></div>
             <div class="counts" data-role="counts"></div>
+            <div class="variants staff" data-role="variants"></div>
             <div class="slot-price num" data-role="price"></div>
           </div>`).join("")}
         ${state.tab === "new" ? `
@@ -755,7 +853,7 @@ function buildCards() {
         <div class="section-title">一括払い</div>
         <div class="rows num">
           <span class="lbl">定価合計</span><span class="val" data-role="list"></span>
-          <span class="lbl">${state.tab === "add" ? "割引" : "回数割引"}</span><span class="val minus" data-role="disc"></span>
+          <span class="lbl" data-role="discRow">${state.tab === "add" ? "割引" : `乗り換え割引<small class="only-tag">他社会員様限定</small>`}</span><span class="val minus" data-role="discRow"><span data-role="disc"></span></span>
           <span class="lbl sp-lbl" data-role="spRow">特別割</span><span class="val minus" data-role="spRow"><span data-role="spDisc"></span></span>
           <span class="lbl bonus-lbl" data-role="bonusRow"><span data-role="bonusLbl"></span></span><span class="val bonus-lbl" data-role="bonusRow">¥0</span>
         </div>
@@ -792,10 +890,26 @@ function buildCards() {
       const i = +slotEl.dataset.slot;
       slotEl.querySelector('[data-role=plan]').addEventListener("change", e => {
         const plan = PLANS.get(e.target.value);
-        const prev = pat.slots[i].count;
-        // 同じ回数があれば維持、無ければ最大回数を初期選択
-        const count = plan ? (plan.options.some(o => o.count === prev) ? prev : plan.options[plan.options.length - 1].count) : null;
+        const count = plan ? defaultCountFor(plan, pat.slots[i].count) : null;
         pat.slots[i] = slot(e.target.value, count);
+        if (isPart(e.target.value)) pat.slots[i].parts = [e.target.value];
+        updateCard(tier);
+      });
+      // 単パーツ：部位を追加・削除（「＋部位」で一覧を開く）
+      const partsEl = slotEl.querySelector('[data-role=parts]');
+      partsEl.addEventListener("click", e => {
+        if (e.target.closest("[data-role=partsToggle]")) {
+          partsEl.classList.toggle("open");
+          updateCard(tier);
+          return;
+        }
+        const btn = e.target.closest("[data-part]");
+        if (!btn) return;
+        const s = pat.slots[i];
+        const key = btn.dataset.part;
+        s.parts = s.parts.includes(key) ? s.parts.filter(k => k !== key) : [...s.parts, key];
+        if (!s.parts.length) { pat.slots[i] = emptySlot(); partsEl.classList.remove("open"); }
+        else s.plan = s.parts[0]; // 枠の代表（プラン選択の表示用）は最初の部位
         updateCard(tier);
       });
       slotEl.querySelector('[data-role=clear]').addEventListener("click", () => {
@@ -813,6 +927,20 @@ function buildCards() {
         }
         countsEl.classList.remove("open");
         pat.slots[i].count = +btn.dataset.count;
+        pat.slots[i].variant = 0;
+        updateCard(tier);
+      });
+      // 同じ回数で金額が複数あるプランの金額切替（回数と同じく、選んだ金額だけ表示。押すと開く）
+      const variantsEl = slotEl.querySelector('[data-role=variants]');
+      variantsEl.addEventListener("click", e => {
+        const btn = e.target.closest("[data-variant]");
+        if (!btn) return;
+        if (!variantsEl.classList.contains("open") && btn.classList.contains("active")) {
+          variantsEl.classList.add("open");
+          return;
+        }
+        variantsEl.classList.remove("open");
+        pat.slots[i].variant = +btn.dataset.variant;
         updateCard(tier);
       });
     });
@@ -906,16 +1034,31 @@ function updateCard(tier) {
     slotEl.querySelector('[data-role=plan]').value = s.plan;
     const face = slotEl.querySelector('[data-role=face]');
     face.classList.toggle("placeholder", !plan);
-    face.innerHTML = plan
-      ? (isElepore(plan.key) ? `<span class="cat-tag">エレポレ</span>` : "") + plan.label
-      : "プランを選択";
+    const keys = plan ? slotKeys(s) : [];
+    face.innerHTML = !plan ? "プランを選択"
+      : keys.length > 1 ? `<span class="cat-tag">単パーツ ${keys.length}部位</span>` + keys.map(k => PLANS.get(k).label).join("・")
+      : (isElepore(plan.key) ? `<span class="cat-tag">エレポレ</span>` : "") + plan.label;
+
+    // 単パーツ：選んだ部位をチップで表示。「＋部位」で全部位を開いて追加・削除
+    const partsEl = slotEl.querySelector('[data-role=parts]');
+    partsEl.innerHTML = isPart(s.plan)
+      ? PART_KEYS().map(k => `<button class="chip ${keys.includes(k) ? "active" : ""}" data-part="${k}">${PLANS.get(k).label}</button>`).join("")
+        + `<button class="chip parts-toggle staff" data-role="partsToggle">${partsEl.classList.contains("open") ? "完了" : "＋部位"}</button>`
+      : "";
+    if (!isPart(s.plan)) partsEl.classList.remove("open");
     slotEl.querySelector('[data-role=clear]').style.visibility = plan ? "visible" : "hidden";
 
-    slotEl.querySelector('[data-role=counts]').innerHTML = plan
-      ? plan.options.map(o => {
-          const r = slotRate(pat, { plan: s.plan, count: o.count });
-          return `<button class="chip ${o.count === s.count ? "active" : ""} ${plan.options.length > 1 ? "more" : ""}" data-count="${o.count}">${o.count}回${r ? `<small>${Math.round(r * 100)}%OFF</small>` : ""}</button>`;
-        }).join("")
+    const counts = plan ? countsOf(plan) : [];
+    slotEl.querySelector('[data-role=counts]').innerHTML = counts.map(c => {
+      const r = slotRate(pat, { plan: s.plan, count: c });
+      return `<button class="chip ${c === s.count ? "active" : ""} ${counts.length > 1 ? "more" : ""}" data-count="${c}">${c}回${r ? `<small>${Math.round(r * 100)}%OFF</small>` : ""}</button>`;
+    }).join("");
+
+    // 同じ回数で金額が複数ある場合だけ、金額の切替ボタンを表示（スタッフ用）
+    const variants = plan ? variantsOf(plan, s.count) : [];
+    slotEl.querySelector('[data-role=variants]').innerHTML = variants.length > 1
+      ? `<span class="variants-lbl">金額</span>` + variants.map((o, v) =>
+          `<button class="chip ${v === (s.variant || 0) ? "active" : ""}" data-variant="${v}">${yen(o.price)}</button>`).join("")
       : "";
 
     const p = priceOf(pat, s);
@@ -941,7 +1084,10 @@ function updateCard(tier) {
   const t = patternTotals(tier);
   card.querySelector('[data-role=sub]').textContent = t.n ? `${t.n}プラン選択中` : "プラン未選択";
   card.querySelector('[data-role=list]').textContent = yen(t.list);
-  card.querySelector('[data-role=disc]').textContent = t.countDisc ? "−" + yen(t.countDisc) : "¥0";
+  // 割引の行は、割引を使ったときだけ表示
+  card.querySelectorAll('[data-role=discRow]').forEach(el => el.hidden = !t.countDisc);
+  card.querySelector('[data-role=disc]').textContent = "−" + yen(t.countDisc);
+  updateTransferNote();
   card.querySelectorAll('[data-role=spRow]').forEach(el => el.hidden = !t.specialDisc);
   card.querySelector('[data-role=spDisc]').textContent = "−" + yen(t.specialDisc);
   card.querySelectorAll('[data-role=bonusRow]').forEach(el => el.hidden = !t.bonus);
@@ -1005,6 +1151,14 @@ function updateInstallment(tier) {
 }
 
 function updateAll() { TIERS.forEach(t => updateCard(t.id)); }
+
+/* 画面下の「乗り換え割引は他社会員様限定」の注記：表示中のカードで乗り換え割引を使ったときだけ出す */
+const VISIBLE_CARDS = { single: 1, double: 2, tiers: 3 };
+function updateTransferNote() {
+  const used = state.tab === "new" &&
+    TIERS.slice(0, VISIBLE_CARDS[state.mode]).some(t => patternTotals(t.id).countDisc > 0);
+  document.getElementById("transferNote").hidden = !used;
+}
 
 /* 分割払い欄の開閉（松竹梅すべて同時に開閉） */
 function setInstOpen(open) {
@@ -1085,6 +1239,7 @@ function setMode(mode) {
   document.querySelectorAll("#modeSeg button").forEach(x => x.classList.toggle("active", x.dataset.mode === mode));
   cardsEl.classList.toggle("single", mode === "single");
   cardsEl.classList.toggle("double", mode === "double");
+  updateTransferNote();
   // モードごとのカード名（1パターン：おすすめプラン／2パターン：A・B／松竹梅）
   const labels = {
     single: [["", "おすすめプラン"]],
