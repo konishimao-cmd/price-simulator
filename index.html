@@ -61,6 +61,7 @@
     font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer;
   }
   .seg button.active { background: var(--primary); color: #fff; }
+  .rate-seg button.active { background: var(--off); }
 
   .toggle {
     display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;
@@ -197,7 +198,6 @@
   .slot-price b { font-size: 15px; }
   .sp-tag { background: var(--off); color: #fff; font-weight: 700; font-size: 11px; padding: 1px 6px; border-radius: 4px; }
   .rows .sp-lbl { color: var(--off); font-weight: 700; }
-  .only-tag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 4px; border: 1px solid var(--off); color: var(--off); font-size: 10px; font-weight: 700; vertical-align: 1px; }
   .toggle.sp .pct::before { content: "★ "; }
 
   /* 新規：3回特典（15万円以上のプラン選択時のみ） */
@@ -271,6 +271,9 @@
   .cdisc-fold:hover { opacity: 1; }
   .cdisc-fold[aria-expanded=true] { opacity: 1; }
   .cdisc-fold[aria-expanded=true] .chev { transform: rotate(180deg); }
+  /* 新規：プランごとの割引ボタン（カードの「割引 ▾」を開いたときだけ表示） */
+  .slot-disc { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; padding-left: 28px; }
+  .slot-disc:empty, .card:not(.disc-open) .slot-disc { display: none; }
   .dtog {
     border: 1px solid var(--off); background: var(--off-soft); color: var(--off); border-radius: 999px;
     padding: 2px 10px; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer;
@@ -279,7 +282,7 @@
   .dtog.off { border: 1px dashed var(--border); background: var(--surface); color: var(--muted); text-decoration: line-through; }
   .dtog.off::before { content: ""; }
 
-  /* 折り畳み：回数割引（ヘッダー） */
+  /* 折り畳み：当日裁量割引（ヘッダー） */
   .fold-btn {
     display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
     border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; background: var(--surface);
@@ -377,7 +380,7 @@
 
     <div class="group staff" data-for="new">
       <button class="fold-btn" id="discFoldBtn" aria-expanded="false" aria-controls="discPanel">
-        <span>乗り換え割引</span><span class="fold-status" id="discStatus"></span><span class="chev">▾</span>
+        <span>当日裁量割引</span><span class="fold-status" id="discStatus"></span><span class="chev">▾</span>
       </button>
     </div>
 
@@ -401,11 +404,10 @@
   </div>
   <div class="fold-panel staff" id="discPanel" data-for="new" hidden>
     <div class="bar">
-      <span class="group-label">乗り換え割引（他社会員様限定）を全体に適用（各カードの「割引」で個別にも切替可）</span>
-      <label class="toggle" data-for="new"><input type="checkbox" data-disc="9"><span class="sw"></span><span class="txt">9回 <span class="pct">15%OFF</span></span></label>
-      <label class="toggle" data-for="new"><input type="checkbox" data-disc="12"><span class="sw"></span><span class="txt">12回 <span class="pct">20%OFF</span></span></label>
-      <label class="toggle" data-for="new"><input type="checkbox" data-disc="24"><span class="sw"></span><span class="txt">24回 <span class="pct">20%OFF</span></span></label>
-      <label class="toggle sp" data-for="new"><input type="checkbox" id="specialDisc"><span class="sw"></span><span class="txt"><span class="pct">特別割</span> 12回以上・ALL／＋プラン さらに20%OFF</span></label>
+      <span class="group-label">全プランに適用（各カードの「割引 ▾」でプランごとにも設定可）　当日裁量割引</span>
+      <div class="seg rate-seg" id="transferSeg"></div>
+      <span class="group-label" data-for="new">OPEN記念特別割（12回以上+セットプラン限定）</span>
+      <div class="seg rate-seg" id="specialSeg" data-for="new"></div>
     </div>
   </div>
 </header>
@@ -415,12 +417,11 @@
 </main>
 
 <ul class="note">
-  <li>金額は価格表（価格表 (5).xlsx）の「金額」を定価として、回数に応じた割引を適用しています（1円未満切り捨て）。新規・追加タブには、A列「使用用途」に応じたプランを表示しています。</li>
-  <li class="staff" data-for="new">特別割（新規のみ）は「12回以上」かつ「セットプラン（ALL、またはかっこの外に ＋ を含む）」が対象で、乗り換え割引後の金額からさらに20%OFFします。</li>
+  <li>金額は価格表（価格表 (5).xlsx）の「金額」を定価として、選択した割引を適用しています（1円未満切り捨て）。新規・追加タブには、A列「使用用途」に応じたプランを表示しています。</li>
+  <li class="staff" data-for="new">OPEN記念特別割（新規のみ）は「12回以上」かつ「セットプラン（ALL、またはかっこの外に ＋ を含む）」が対象で、当日裁量割引後の金額からさらに10%／15%／20%OFFします。</li>
   <li class="staff" data-for="add">追加プランの割引は、各カードの「割引」で 10%OFF／20%OFF を押すと、そのカードで選択中の回数に適用されます（回数ごとに記憶。もう一度押すと解除）。アフター保証は「保証 50%／80%／90%OFF」から選択、セレクト脱毛（追加CP）は割引不可です。24回が無いプランは「12回の定価 × 2」を24回の定価として表示しています。</li>
-  <li data-for="new" id="transferNote" hidden>乗り換え割引は、他社脱毛サロン・クリニックの会員様限定の割引です。</li>
-  <li class="staff" data-for="new">単パーツは割引（乗り換え割引・特別割）の対象外です。</li>
-  <li class="staff" data-for="new">割引は上部の「乗り換え割引」で全体に一括適用、各カードの「割引」でカードごとに個別適用できます（全体を切り替えると個別設定はリセットされます）。</li>
+  <li class="staff" data-for="new">単パーツは割引（当日裁量割引・OPEN記念特別割）の対象外です。</li>
+  <li class="staff" data-for="new">割引は上部の「当日裁量割引」で全体に一括適用、各カードの「割引 ▾」を開くとプランごとに個別適用できます（全体を切り替えると個別設定はリセットされます）。</li>
   <li>分割払いは概算です（最大50回）。頭金は分割手数料の対象外です。実際のお支払額は信販会社の計算により異なる場合があります。</li>
   <li class="staff">計算方式：アドオン方式＝分割手数料は「分割元金 × 月あたり料率 × 回数」。年利方式＝元利均等返済・実質年率で計算。</li>
 </ul>
@@ -576,17 +577,17 @@ const PRICE_TABLE = [
   ["追加AF", "アフター保証_まゆ・小鼻脱毛12回", 12, 264745],
 ];
 
-/* 新規：回数別割引率（ON/OFFは画面上のトグルで切替） */
-const DISCOUNT_RATES = { 9: 0.15, 12: 0.20, 24: 0.20 };
+/* 新規：当日裁量割引。回数に関係なく 10%／15%／20%OFF から選択（単パーツは対象外） */
+const TRANSFER_RATES = [0.1, 0.15, 0.2];
 /* 追加：プランのグループごとに選べる割引率（セレクト脱毛＝追加CPは割引不可）
    normal＝追加専用・通常プラン、af＝アフター保証 */
 const ADD_DISCOUNT_GROUPS = {
   normal: { rates: [0.1, 0.2],      prefix: "",      applies: cat => cat === "追加専用" || cat === "通常" },
   af:     { rates: [0.5, 0.8, 0.9], prefix: "保証 ", applies: cat => cat === "アフター保証" },
 };
-/* 特別割（新規のみ）：12回以上 かつ セットプラン（プラン名に「ALL」か、かっこの外に「+」を含む）に、回数割引後の金額からさらに20%OFF
+/* 特別割（新規のみ）：12回以上 かつ セットプラン（プラン名に「ALL」か、かっこの外に「+」を含む）に、当日裁量割引後の金額からさらに10%／15%／20%OFF
    ※「全身(上半身+下半身)」のように、かっこ内の「+」だけのプランはセットプランではないため対象外 */
-const SPECIAL_RATE = 0.20;
+const SPECIAL_RATES = [0.1, 0.15, 0.2]; // 特別10%／特別15%／特別20%
 const SPECIAL_MIN_COUNT = 12;
 const isSpecialEligible = (planKey, count) =>
   count >= SPECIAL_MIN_COUNT && /ALL|[+＋]/.test(planKey.replace(/[（(][^）)]*[）)]/g, ""));
@@ -668,8 +669,8 @@ function defaultState() {
   return {
     mode: "tiers",
     instOpen: false,
-    discounts: { 9: false, 12: false, 24: false }, // 割引は初期状態では未使用
-    special: false,
+    transfer: 0, // 当日裁量割引の率（0＝未使用。初期状態は未使用）
+    special: 0, // 特別割の率（0＝未使用）
     calc: "addon",                   // 分割の計算方式：addon（社内標準）／apr
     rates: { addon: 0.8, apr: 14.8 }, // アドオン料率（%/月）／実質年率（%/年）
     tab: "new",
@@ -690,12 +691,13 @@ function defaultState() {
   };
 }
 /* variant：同じ回数で金額が複数あるプラン（ヒゲ脱毛3部位 3回の ¥7,800／¥3,300）の何番目の金額か */
-function slot(plan, count) { return { plan, count, variant: 0 }; }
+/* transfer / special：新規タブのプランごとの当日裁量割引・特別割の率（null＝上部の全体設定に従う） */
+function slot(plan, count) { return { plan, count, variant: 0, transfer: null, special: null }; }
 function emptySlot() { return slot("", null); }
-/* 新規タブ：discOn / spOn（null＝全体設定に従う、true/false＝このカードだけ個別にON/OFF）、bonus（3回特典のプラン名。""＝なし）
+/* 新規タブ：bonus（3回特典のプラン名。""＝なし）。割引はプランごと（slot の transfer / special）
    追加タブ：addRates（このカードの割引グループごと・回数ごとの割引率 {normal: {回数: 率}, af: {回数: 率}}） */
 function newPattern(slots) {
-  return { slots, months: DEFAULT_MONTHS, down: DEFAULT_DOWN, discOn: null, spOn: null, bonus: "", addRates: { normal: {}, af: {} } };
+  return { slots, months: DEFAULT_MONTHS, down: DEFAULT_DOWN, bonus: "", addRates: { normal: {}, af: {} } };
 }
 let state = defaultState();
 
@@ -703,8 +705,9 @@ let state = defaultState();
 const yen = n => "¥" + Math.round(n).toLocaleString("ja-JP");
 
 /* 割引の適用（カードの個別設定があれば優先、なければ全体設定） */
-const countDiscOn = (pat, s) => pat.discOn ?? !!state.discounts[s.count];
-const patSpecialOn = pat => pat.spOn ?? state.special;
+/* 新規：プランごとの割引率（プランの個別設定があれば優先、なければ上部の全体設定） */
+const slotTransfer = s => s.transfer ?? state.transfer;
+const slotSpecial = s => isSpecialEligible(s.plan, s.count) ? (s.special ?? state.special) : 0;
 /* 追加の割引率：カードごと・割引グループごと・回数ごとに設定 */
 const discGroupOf = planKey => {
   const plan = PLANS.get(planKey);
@@ -717,11 +720,11 @@ function patAddRateShown(pat, group) {
   const rates = [...new Set(selectedCounts(pat, group).map(c => addRateOf(pat, group, c)))];
   return rates.length === 1 ? rates[0] : null;
 }
-/* プランの割引率：新規＝回数別の固定率、追加＝グループ・回数ごとに選択 */
+/* プランの割引率：新規＝当日裁量割引（回数に関係なく同率）、追加＝グループ・回数ごとに選択 */
 const slotRate = (pat, s) => state.tab === "add"
   ? (discGroupOf(s.plan) ? addRateOf(pat, discGroupOf(s.plan), s.count) : 0)
   : isPart(s.plan) ? 0 // 単パーツは割引不可
-  : countDiscOn(pat, s) ? (DISCOUNT_RATES[s.count] || 0) : 0;
+  : slotTransfer(s);
 
 /* 割引後の金額（1円未満切り捨て）。0.8 などの小数誤差で1円ずれないよう、整数の%で計算 */
 const applyDiscount = (price, rate) => Math.floor(price * (100 - Math.round(rate * 100)) / 100);
@@ -735,7 +738,7 @@ function priceOf(pat, s) {
   const plan = PLANS.get(s.plan);
   if (!plan) return null;
   const rate = slotRate(pat, s);
-  const special = state.tab === "new" && isSpecialEligible(s.plan, s.count) && patSpecialOn(pat); // 特別割は新規のみ
+  const special = state.tab === "new" ? slotSpecial(s) : 0; // 特別割の率（新規のみ）
   let list = 0, afterCount = 0, discounted = 0;
   for (const key of slotKeys(s)) {
     const variants = variantsOf(PLANS.get(key), s.count);
@@ -744,16 +747,9 @@ function priceOf(pat, s) {
     const after = applyDiscount(opt.price, rate);
     list += opt.price;
     afterCount += after;
-    discounted += special ? applyDiscount(after, SPECIAL_RATE) : after;
+    discounted += applyDiscount(after, special);
   }
   return { list, rate, afterCount, special, discounted };
-}
-
-/* カードの「回数割引」ボタンの表示状態：個別設定、なければ選択中プランに全体設定の割引が1つでも効いているか */
-function patCountDiscShown(pat) {
-  if (pat.discOn !== null) return pat.discOn;
-  const counts = pat.slots.filter(s => PLANS.has(s.plan) && !isPart(s.plan) && DISCOUNT_RATES[s.count]).map(s => s.count);
-  return counts.length ? counts.some(c => state.discounts[c]) : Object.values(state.discounts).some(Boolean);
 }
 
 /* 分割の計算方式（画面の表記・単位） */
@@ -816,8 +812,6 @@ function buildCards() {
           <div class="card-disc staff" data-role="cdisc">
             <button class="cdisc-fold" data-role="bonusFold" data-for="new" aria-expanded="false" title="3回特典の表示">特典<span class="chev">▾</span></button>
             <div class="cdisc-btns" data-role="cdiscBtns" hidden>
-              <button class="dtog" data-dt="count" data-for="new">乗り換え割引</button>
-              <button class="dtog" data-dt="sp" data-for="new">特別割</button>
               ${Object.entries(ADD_DISCOUNT_GROUPS).map(([g, def]) => def.rates.map(r =>
                 `<button class="dtog" data-ag="${g}" data-ar="${r}" data-for="add">${def.prefix}${Math.round(r * 100)}%OFF</button>`).join("")).join("")}
             </div>
@@ -838,6 +832,7 @@ function buildCards() {
             <div class="counts" data-role="counts"></div>
             <div class="variants staff" data-role="variants"></div>
             <div class="slot-price num" data-role="price"></div>
+            <div class="slot-disc staff" data-role="sdisc" data-for="new"></div>
           </div>`).join("")}
         ${state.tab === "new" ? `
         <div class="bonus" data-role="bonus" hidden>
@@ -853,8 +848,8 @@ function buildCards() {
         <div class="section-title">一括払い</div>
         <div class="rows num">
           <span class="lbl">定価合計</span><span class="val" data-role="list"></span>
-          <span class="lbl" data-role="discRow">${state.tab === "add" ? "割引" : `乗り換え割引<small class="only-tag">他社会員様限定</small>`}</span><span class="val minus" data-role="discRow"><span data-role="disc"></span></span>
-          <span class="lbl sp-lbl" data-role="spRow">特別割</span><span class="val minus" data-role="spRow"><span data-role="spDisc"></span></span>
+          <span class="lbl" data-role="discRow">${state.tab === "add" ? "割引" : "当日割引"}</span><!-- お客様向けの表記（スタッフ用の名称は「当日裁量割引」） --><span class="val minus" data-role="discRow"><span data-role="disc"></span></span>
+          <span class="lbl sp-lbl" data-role="spRow">特別割引</span><!-- お客様向けの表記（スタッフ用の名称は「OPEN記念特別割」） --><span class="val minus" data-role="spRow"><span data-role="spDisc"></span></span>
           <span class="lbl bonus-lbl" data-role="bonusRow"><span data-role="bonusLbl"></span></span><span class="val bonus-lbl" data-role="bonusRow">¥0</span>
         </div>
         <div class="total"><span class="lbl">お支払総額</span><span class="val num" data-role="total"></span></div>
@@ -943,25 +938,32 @@ function buildCards() {
         pat.slots[i].variant = +btn.dataset.variant;
         updateCard(tier);
       });
+      // 新規：このプランだけの割引（同じボタンをもう一度押すと解除）
+      slotEl.querySelector('[data-role=sdisc]').addEventListener("click", e => {
+        const btn = e.target.closest("[data-st], [data-ss]");
+        if (!btn) return;
+        const s = pat.slots[i];
+        if (btn.dataset.st) { const r = +btn.dataset.st; s.transfer = slotTransfer(s) === r ? 0 : r; }
+        else { const r = +btn.dataset.ss; s.special = slotSpecial(s) === r ? 0 : r; }
+        updateCard(tier);
+      });
     });
 
-    // カードごとの割引ON/OFF（個別設定）：普段は折りたたみ
+    // 割引の設定：普段は折りたたみ。新規＝各プランの下に割引ボタン、追加＝カードの割引ボタン
     const cdiscFold = card.querySelector('[data-role=cdiscFold]');
     cdiscFold.addEventListener("click", () => {
-      const btns = card.querySelector('[data-role=cdiscBtns]');
-      btns.hidden = !btns.hidden;
-      cdiscFold.setAttribute("aria-expanded", !btns.hidden);
+      const open = !card.classList.contains("disc-open");
+      card.classList.toggle("disc-open", open);
+      card.querySelector('[data-role=cdiscBtns]').hidden = !open || state.tab !== "add";
+      cdiscFold.setAttribute("aria-expanded", open);
     });
     card.querySelector('[data-role=cdiscBtns]').addEventListener("click", e => {
-      const btn = e.target.closest("[data-dt], [data-ar]");
+      const btn = e.target.closest("[data-ar]");
       if (!btn) return;
-      if (btn.dataset.ar) {
-        // 追加：そのグループのプランで選択中の回数に割引を適用（同じ率をもう一度押すと解除）
-        const g = btn.dataset.ag, r = +btn.dataset.ar;
-        const next = patAddRateShown(pat, g) === r ? 0 : r;
-        selectedCounts(pat, g).forEach(c => { pat.addRates[g][c] = next; });
-      } else if (btn.dataset.dt === "count") pat.discOn = !patCountDiscShown(pat);
-      else pat.spOn = !patSpecialOn(pat);
+      // 追加：そのグループのプランで選択中の回数に割引を適用（同じ率をもう一度押すと解除）
+      const g = btn.dataset.ag, r = +btn.dataset.ar;
+      const next = patAddRateShown(pat, g) === r ? 0 : r;
+      selectedCounts(pat, g).forEach(c => { pat.addRates[g][c] = next; });
       updateCard(tier);
     });
 
@@ -1050,7 +1052,7 @@ function updateCard(tier) {
 
     const counts = plan ? countsOf(plan) : [];
     slotEl.querySelector('[data-role=counts]').innerHTML = counts.map(c => {
-      const r = slotRate(pat, { plan: s.plan, count: c });
+      const r = slotRate(pat, { ...s, count: c });
       return `<button class="chip ${c === s.count ? "active" : ""} ${counts.length > 1 ? "more" : ""}" data-count="${c}">${c}回${r ? `<small>${Math.round(r * 100)}%OFF</small>` : ""}</button>`;
     }).join("");
 
@@ -1066,14 +1068,21 @@ function updateCard(tier) {
       ? (p.rate || p.special
           ? `<span class="strike">${yen(p.list)}</span>`
             + (p.rate ? `<span class="off-tag">${Math.round(p.rate * 100)}%OFF</span>` : "")
-            + (p.special ? `<span class="sp-tag">特別割 ${Math.round(SPECIAL_RATE * 100)}%OFF</span>` : "")
+            + (p.special ? `<span class="sp-tag">特別${Math.round(p.special * 100)}%OFF</span>` : "")
             + `<b>${yen(p.discounted)}</b>`
           : `<b>${yen(p.list)}</b>`)
       : "";
+
+    // 新規：このプランの割引ボタン（単パーツは割引不可。特別割は対象プランのみ）
+    const pct = r => Math.round(r * 100);
+    slotEl.querySelector('[data-role=sdisc]').innerHTML = state.tab === "new" && plan && !isPart(s.plan)
+      ? TRANSFER_RATES.map(r => `<button class="dtog ${slotTransfer(s) === r ? "" : "off"}" data-st="${r}">${pct(r)}%OFF</button>`).join("")
+        + (isSpecialEligible(s.plan, s.count)
+          ? SPECIAL_RATES.map(r => `<button class="dtog ${slotSpecial(s) === r ? "" : "off"}" data-ss="${r}">特別${pct(r)}%</button>`).join("")
+          : "")
+      : "";
   });
 
-  card.querySelector('[data-dt=count]').classList.toggle("off", !patCountDiscShown(pat));
-  card.querySelector('[data-dt=sp]').classList.toggle("off", !patSpecialOn(pat));
   card.querySelectorAll('[data-ar]').forEach(b => {
     const g = b.dataset.ag;
     b.classList.toggle("off", +b.dataset.ar !== patAddRateShown(pat, g));
@@ -1087,7 +1096,6 @@ function updateCard(tier) {
   // 割引の行は、割引を使ったときだけ表示
   card.querySelectorAll('[data-role=discRow]').forEach(el => el.hidden = !t.countDisc);
   card.querySelector('[data-role=disc]').textContent = "−" + yen(t.countDisc);
-  updateTransferNote();
   card.querySelectorAll('[data-role=spRow]').forEach(el => el.hidden = !t.specialDisc);
   card.querySelector('[data-role=spDisc]').textContent = "−" + yen(t.specialDisc);
   card.querySelectorAll('[data-role=bonusRow]').forEach(el => el.hidden = !t.bonus);
@@ -1152,14 +1160,6 @@ function updateInstallment(tier) {
 
 function updateAll() { TIERS.forEach(t => updateCard(t.id)); }
 
-/* 画面下の「乗り換え割引は他社会員様限定」の注記：表示中のカードで乗り換え割引を使ったときだけ出す */
-const VISIBLE_CARDS = { single: 1, double: 2, tiers: 3 };
-function updateTransferNote() {
-  const used = state.tab === "new" &&
-    TIERS.slice(0, VISIBLE_CARDS[state.mode]).some(t => patternTotals(t.id).countDisc > 0);
-  document.getElementById("transferNote").hidden = !used;
-}
-
 /* 分割払い欄の開閉（松竹梅すべて同時に開閉） */
 function setInstOpen(open) {
   state.instOpen = open;
@@ -1170,7 +1170,7 @@ function setInstOpen(open) {
   });
 }
 
-/* ===== スタッフ用項目（回数割引・計算方式/料率・リセット・印刷）の表示切替。分割払いの欄は隠さない ===== */
+/* ===== スタッフ用項目（当日裁量割引・計算方式/料率・リセット・印刷）の表示切替。分割払いの欄は隠さない ===== */
 const staffBtn = document.getElementById("staffBtn");
 staffBtn.addEventListener("click", () => {
   const hide = !document.body.classList.contains("customer");
@@ -1187,28 +1187,34 @@ discFoldBtn.addEventListener("click", () => {
   discPanel.hidden = !open;
   discFoldBtn.setAttribute("aria-expanded", open);
 });
-/* 新規タブの全体割引の状態表示（追加タブの割引は各カードで設定） */
+/* 新規タブの全体割引（各プランの「割引」で個別にも設定可。追加タブの割引は各カードで設定）
+   当日裁量割引【なし｜10%OFF｜15%OFF｜20%OFF】、特別割【なし｜特別10%｜特別15%｜特別20%】 */
+const pctOf = r => Math.round(r * 100);
+const GLOBAL_DISCOUNTS = [
+  { seg: document.getElementById("transferSeg"), key: "transfer", rates: TRANSFER_RATES, label: r => `${pctOf(r)}%OFF` },
+  { seg: document.getElementById("specialSeg"),  key: "special",  rates: SPECIAL_RATES,  label: r => `特別${pctOf(r)}%` },
+];
+GLOBAL_DISCOUNTS.forEach(({ seg, key, rates, label }) => {
+  seg.innerHTML = [0, ...rates].map(r => `<button data-rate="${r}">${r ? label(r) : "なし"}</button>`).join("");
+  seg.addEventListener("click", e => {
+    const b = e.target.closest("[data-rate]");
+    if (!b) return;
+    state[key] = +b.dataset.rate;
+    // 全体設定を切り替えたら、その割引のプラン個別設定はリセットして新規の全プランに反映
+    TIERS.forEach(t => state.byTab.new[t.id].slots.forEach(s => { s[key] = null; }));
+    updateDiscStatus();
+    updateAll();
+  });
+});
+
 function updateDiscStatus() {
-  const on = Object.keys(DISCOUNT_RATES).filter(c => state.discounts[c]).map(c => c + "回");
-  if (state.special) on.push("特別割");
+  GLOBAL_DISCOUNTS.forEach(({ seg, key }) =>
+    seg.querySelectorAll("[data-rate]").forEach(b => b.classList.toggle("active", +b.dataset.rate === state[key])));
+  const on = GLOBAL_DISCOUNTS.filter(({ key }) => state[key]).map(({ key, label }) => label(state[key]));
   const el = document.getElementById("discStatus");
   el.textContent = on.length ? on.join("・") + " 適用中" : "すべてOFF";
   el.classList.toggle("none", !on.length);
 }
-/* 全体設定を切り替えたら、その割引のカード個別設定はリセットして新規の全カードに反映 */
-const forEachPattern = fn => TIERS.forEach(t => fn(state.byTab.new[t.id]));
-document.querySelectorAll("[data-disc]").forEach(cb => cb.addEventListener("change", () => {
-  state.discounts[cb.dataset.disc] = cb.checked;
-  forEachPattern(p => { p.discOn = null; });
-  updateDiscStatus();
-  updateAll();
-}));
-document.getElementById("specialDisc").addEventListener("change", e => {
-  state.special = e.target.checked;
-  forEachPattern(p => { p.spOn = null; });
-  updateDiscStatus();
-  updateAll();
-});
 /* 分割の計算方式（アドオン／年利）と料率 */
 const rateInput = document.getElementById("rate");
 function syncCalc() {
@@ -1239,7 +1245,6 @@ function setMode(mode) {
   document.querySelectorAll("#modeSeg button").forEach(x => x.classList.toggle("active", x.dataset.mode === mode));
   cardsEl.classList.toggle("single", mode === "single");
   cardsEl.classList.toggle("double", mode === "double");
-  updateTransferNote();
   // モードごとのカード名（1パターン：おすすめプラン／2パターン：A・B／松竹梅）
   const labels = {
     single: [["", "おすすめプラン"]],
@@ -1276,8 +1281,6 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   const tab = state.tab; // 表示中のタブはそのまま
   state = defaultState();
   state.tab = tab;
-  document.querySelectorAll("[data-disc]").forEach(cb => cb.checked = state.discounts[cb.dataset.disc]);
-  document.getElementById("specialDisc").checked = state.special;
   syncCalc(); render();
 });
 
